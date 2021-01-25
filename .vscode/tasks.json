@@ -1,0 +1,50 @@
+{
+	//build -> link (compile : the required pre-step)
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "C/C++: cpp build active file", // name of task
+			"command": "g++",
+			"args":[
+				"-g",
+				"${workspaceFolder}/src/*.cc",
+				"-Wall",
+				"-O3",
+				"-std=c++17",
+				"-o",
+				"${workspaceFolder}/${fileBasenameNoExtension}.out",
+				"-pthread",
+				"-lm",
+				"-L${workspaceFolder}",
+				"-labc",
+				"-ldl",
+				"-lreadline",
+				"-I${workspaceFolder}/abc/src",
+				"-I${workspaceFolder}/inc",
+				"-Iusr/include"
+			],
+			// "args": [
+			// 	"-g",
+			// 	"${fileDirname}/${fileBasename}",
+			// 	"-o",
+			// 	"${fileDirname}/${fileBasenameNoExtension}.out",
+			// 	"-pthread",
+			// 	"-lm",
+			// 	"-L${workspaceFolder}",
+			// 	"-labc",
+			// 	"-ldl",
+			// 	"-lreadline",
+			// 	"-I${workspaceFolder}"
+			// ],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": {
+				"base": "$gcc",
+        		"fileLocation": ["absolute", "${workspaceFolder}"]
+			},
+			"group": "build"
+		}
+	]
+}
