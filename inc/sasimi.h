@@ -100,18 +100,6 @@ public:
      *      AddMuxes
      */
     int SatSolveApply(IN std::string cnfPrefix, IN std::string outPrefix);
-
-    /** AddMuxes *********************************************************************
-     * 
-     * written by Alexanderia
-     * 
-     * [description]
-     *      add Muxes to all the nodes with available candidates
-     * 
-     * [see also]
-     *      AddNodeMuxes
-     */
-    void AddMuxes(IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & nodeLACs);
 };
 
 

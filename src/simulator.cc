@@ -1587,7 +1587,7 @@ void Simulator_t::SortCutNtkNodes(Abc_Obj_t * pPivot, std::set <Abc_Obj_t *> & c
     sort(cutNtks[pPivot->Id].begin(), cutNtks[pPivot->Id].end(), [this](const Abc_Obj_t * pObj1, const Abc_Obj_t * pObj2) {
         if (this->topoIds[pObj1->Id] < this->topoIds[pObj2->Id])
             return true;
-        DASSERT(this->topoIds[pObj1->Id] > this->topoIds[pObj2->Id]);
+        DASSERT(this->topoIds[pObj1->Id] >= this->topoIds[pObj2->Id]);
         return false;
     }
     );

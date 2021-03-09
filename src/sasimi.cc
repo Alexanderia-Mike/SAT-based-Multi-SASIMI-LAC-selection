@@ -16,80 +16,7 @@ SASIMI_Manager_t::~SASIMI_Manager_t()
 }
 
 
-void SASIMI_Manager_t::SATBasedMultiSelection(Abc_Ntk_t * pOriNtk, std::string outPrefix)
-{
-    // init
-    PatchConst(pOriNtk); // add 0s and 1s to the original circuit
-    Simulator_t oriSmlt(pOriNtk, nFrame);   // initialize the original simulator
-    Simulator_t *pOriSmlt = &oriSmlt;       // the pointer to the simulator
-    string cnfPrefix = "Muxed_CNF";
 
-    // iteration
-    double error = 0;
-    vector < vector <tVec> > bds;   // cpm[PO][obj][frameBlock], grouped with length of 64
-    vector <Vec_Ptr_t *> vMffcs;    // the vector of Mffcs
-    vector <LAC_t> nodeLACs;        // all the LACs
-    vector <LAC_t> candLACs;        // all the candidates
-    random_device rd;
-    clock_t st = clock();
-    cntRound = 0;
-
-    cout << "--------------- network traversal begin... ---------------" << endl;
-    // unsigned seed = static_cast <unsigned> (rd());   // random generation
-    unsigned seed = 2531465778;         // a fixed generation
-    cout << "seed = " << seed << endl;  
-    cout << "maxLevel = " << maxLevel << endl;
-    oriSmlt.Input(seed);        // initialize PI for original simulator
-    oriSmlt.Simulate();         
-    // GetCPM(oriSmlt, *pAppSmlt, bds);
-    GetCPMOneCut(oriSmlt, *pOriSmlt, bds);
-    Abc_NtkDelayTrace(pOriNtk, nullptr, nullptr, 0);    // update the delay time
-    CollectMFFC(*pOriSmlt, vMffcs);     // collect the Mffcs of the approximate simulator
-    if (metricType == Metric_t::ER)     // get the LACs
-        // CollectAllLACsUnderER(oriSmlt, *pAppSmlt, bds, vMffcs, nodeLACs);
-        CollectAllLACsUnderER(oriSmlt, *pOriSmlt, bds, vMffcs, nodeLACs);
-    else
-        CollectAllLACsUnderNMED(oriSmlt, *pOriSmlt, bds, vMffcs, nodeLACs);
-    FreeMFFC(vMffcs);                   // free the memory
-    // sort the LACs according to their scores
-    // SortCandLACs(nodeLACs, pOriSmlt->GetFrameNum(), candLACs);
-    // apply the best LACs. <res> = 1 if error bound is broke, and 0 if not.
-    // int res = ApplyBestLAC(oriSmlt, *pAppSmlt, candLACs, 10, outPrefix, seed);
-
-    // generate CNF expression according to the muxed network
-    CreateMuxedCNF(pOriNtk, nodeLACs, cnfPrefix);
-    // solve the CNF using SAT and return the rersult thorugh <res>
-    int res = SatSolveApply(cnfPrefix, outPrefix);
-    if (!res)
-        cout << "no available LAC exists" << endl;
-    cout << "time = " << clock() - st << " us" << endl;
-}
-
-// not finished
-void SASIMI_Manager_t::CreateMuxedCNF(IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & nodeLACs, IN std::string cnfPrefix)
-{
-    // add muxes to all the nodes with LAC candidates
-    Abc_Ntk_t * pMUXedNtk = Abc_NtkDup(pOriNtk);
-    AddMuxes(pMUXedNtk, nodeLACs);
-    // write the networks to aiger format
-    char * pFileNameMUXed = "MUXedNtk.aig", * pFileNameOri = "OriNtk.aig";
-    Io_Write(pMUXedNtk, pFileNameMUXed, IO_FILE_AIGER );
-    Io_Write(pOriNtk, pFileNameOri, IO_FILE_AIGER );
-    // read the aig files just created
-    Aig_Man_t * aigManMUXed = Ioa_ReadAiger(pFileNameMUXed, 1);
-    Aig_ManPrintStats(aigManMUXed);
-    Aig_Man_t * aigManOri = Ioa_ReadAiger(pFileNameOri, 1);
-    Aig_ManPrintStats(aigManOri);
-    // create a mitor of the Muxed network and the original network
-    Aig_Man_t * aigManMiter = Aig_ManCreateMiter();
-    // transform the aig to cnf
-    Cnf_Data_t * cnfExpr = Cnf_DeriveSimple(aigMan,0);
-    // add additional clauses to <cnfExpr> corresponding to universal PI quantitfication
-    AddUnivPIQnt(cnfExpr);
-    // using sat solver to solve the cnf
-    sat_solver * solver = sat_solver_new();
-    solver = (sat_solver *) Cnf_DataWriteIntoSolver(cnfExpr, 1, 0);
-}
 
 void SASIMI_Manager_t::GreedySelection(Abc_Ntk_t * pOriNtk, string outPrefix)
 {
@@ -195,7 +122,7 @@ void SASIMI_Manager_t::GetCPM(IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt
     // check
     Abc_Ntk_t * pOriNtk = oriSmlt.GetNetwork();
     Abc_Ntk_t * pAppNtk = appSmlt.GetNetwork();
-    DASSERT(pOriNtk != pAppNtk);
+//    DASSERT(pOriNtk != pAppNtk);
     DASSERT(SmltChecker(&oriSmlt, &appSmlt));
     // get disjoint cuts and the corresponding networks
     appSmlt.BuildCutNtks();
@@ -227,7 +154,7 @@ void SASIMI_Manager_t::GetCPMOneCut(IN Simulator_t & oriSmlt, IN Simulator_t & a
     // check
     Abc_Ntk_t * pOriNtk = oriSmlt.GetNetwork();
     Abc_Ntk_t * pAppNtk = appSmlt.GetNetwork();
-    DASSERT(pOriNtk != pAppNtk);
+//    DASSERT(pOriNtk != pAppNtk);
     DASSERT(SmltChecker(&oriSmlt, &appSmlt));
     // get 1-cuts and the corresponding networks
     appSmlt.BuildOneCutNtks(maxLevel);
