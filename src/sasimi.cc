@@ -24,7 +24,7 @@ void SASIMI_Manager_t::GreedySelection(Abc_Ntk_t * pOriNtk, string outPrefix)
     Abc_Ntk_t * pAppNtk = Abc_NtkDup(pOriNtk);
     PatchConst(pOriNtk); // add 0s and 1s to the original circuit
     PatchConst(pAppNtk); // add 0s and 1s to the approximate circuit
-    Simulator_t oriSmlt(pOriNtk, nFrame); // initialize the 
+    Simulator_t oriSmlt(pOriNtk, nFrame); // initialize the
 
     // iteration
     double error = 0;
@@ -43,10 +43,10 @@ void SASIMI_Manager_t::GreedySelection(Abc_Ntk_t * pOriNtk, string outPrefix)
         Simulator_t * pAppSmlt = new Simulator_t(pAppNtk, nFrame);
         // unsigned seed = static_cast <unsigned> (rd());   // random generation
         unsigned seed = 2531465778;         // a fixed generation
-        cout << "seed = " << seed << endl;  
+        cout << "seed = " << seed << endl;
         cout << "maxLevel = " << maxLevel << endl;
         oriSmlt.Input(seed);        // initialize PI for original simulator
-        oriSmlt.Simulate();         
+        oriSmlt.Simulate();
         pAppSmlt->Input(seed);      // initialize PI for approximate simulator
         pAppSmlt->Simulate();
         // GetCPM(oriSmlt, *pAppSmlt, bds);
@@ -154,7 +154,7 @@ void SASIMI_Manager_t::GetCPMOneCut(IN Simulator_t & oriSmlt, IN Simulator_t & a
     // check
     Abc_Ntk_t * pOriNtk = oriSmlt.GetNetwork();
     Abc_Ntk_t * pAppNtk = appSmlt.GetNetwork();
-//    DASSERT(pOriNtk != pAppNtk);
+    DASSERT(pOriNtk != pAppNtk);
     DASSERT(SmltChecker(&oriSmlt, &appSmlt));
     // get 1-cuts and the corresponding networks
     appSmlt.BuildOneCutNtks(maxLevel);
@@ -266,6 +266,7 @@ void SASIMI_Manager_t::CollectAllLACsUnderER(IN Simulator_t & oriSmlt, IN Simula
     int baseER = GetER(&oriSmlt, &appSmlt);
     Abc_NtkForEachNode(pAppNtk, pObj, i) {
         if (!Abc_NodeIsConst(pObj)) {
+            // pObj is pTS
             CollectNodeLACUnderER(pObj, oriSmlt, appSmlt, isERInc, isERDec, sources, vMffcs, baseER, nodeLACs[pObj->Id]);
         }
     }
@@ -346,9 +347,9 @@ void SASIMI_Manager_t::CollectNodeLACUnderER(IN Abc_Obj_t * pTS, IN Simulator_t 
     Abc_Ntk_t * pAppNtk = appSmlt.GetNetwork();
     DASSERT(pAppNtk == pTS->pNtk);
     double errorBoundInt = errorBound * appSmlt.GetFrameNum();
-    double invDelay = Mio_LibraryReadDelayInvMax((Mio_Library_t *)Abc_FrameReadLibGen()) + 0.1;
-    int areaInv = Mio_LibraryReadAreaInv((Mio_Library_t *)Abc_FrameReadLibGen());
-    int areaBuf = Mio_LibraryReadAreaBuf((Mio_Library_t *)Abc_FrameReadLibGen());
+    double invDelay = 0;
+    int areaInv = 0;
+    int areaBuf = 0;
     nodeLAC.SetFOM(0.0);
     // consider constant replacement
     Abc_Obj_t * pConst0 = Ckt_GetConst(pAppNtk, 0);
@@ -388,7 +389,7 @@ void SASIMI_Manager_t::CollectNodeLACUnderER(IN Abc_Obj_t * pTS, IN Simulator_t 
     Abc_NtkForEachNode(pAppNtk, pSS, i) {
         if (Abc_NodeIsConst(pSS))
             continue;
-        if (Ckt_GetObjArrivalTime(pSS, 3) > Ckt_GetObjArrivalTime(pTS, 3))
+        if (Abc_ObjLevel(pSS) > Abc_ObjLevel(pTS))
             continue;
         if (pTS == pSS)
             continue;
@@ -417,7 +418,7 @@ void SASIMI_Manager_t::CollectNodeLACUnderER(IN Abc_Obj_t * pTS, IN Simulator_t 
             continue;
         GetDER(appSmlt, pTS, pSS, isERInc, isERDec, dErrors);
         // cout << Abc_ObjName(pTS) << "," << Abc_ObjName(pSS) << "," << dErrors.first / static_cast <double>(appSmlt.GetFrameNum()) << "," << dErrors.second / static_cast <double>(appSmlt.GetFrameNum()) << endl;
-        if (baseER + dErrors.first <= errorBoundInt || (baseER + dErrors.second <= errorBoundInt && Ckt_GetObjArrivalTime(pTS, 3) >= Ckt_GetObjArrivalTime(pSS, 3) +  invDelay * 1000)) {
+        if (baseER + dErrors.first <= errorBoundInt || (baseER + dErrors.second <= errorBoundInt && Abc_ObjLevel(pTS) >= Abc_ObjLevel(pSS) +  invDelay * 1000)) {
             double dArea = GetDArea(pTS, pSS, vMffcs);
             if (dErrors.first <= dErrors.second) {
                 Abc_Obj_t * pFanout = nullptr;
@@ -435,7 +436,7 @@ void SASIMI_Manager_t::CollectNodeLACUnderER(IN Abc_Obj_t * pTS, IN Simulator_t 
                 if ((dErrors.first < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.first >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
                     nodeLAC.Update(pTS, pSS, false, dErrors.first, dArea, tempFOM);
             }
-            else if (Ckt_GetObjArrivalTime(pTS, 3) >= Ckt_GetObjArrivalTime(pSS, 3) +  invDelay * 1000) {
+            else if (Abc_ObjLevel(pTS) >= Abc_ObjLevel(pSS) +  invDelay * 1000) {
                 dArea -= areaInv;
                 double tempFOM = dArea / (dErrors.second + 1e-10);
                 if ((dErrors.second < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.second >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
@@ -541,7 +542,7 @@ void SASIMI_Manager_t::CollectNodeLACUnderNMED(IN Abc_Obj_t * pTS, IN Simulator_
     Abc_NtkForEachNode(pAppNtk, pSS, i) {
         if (Abc_NodeIsConst(pSS))
             continue;
-        if (Ckt_GetObjArrivalTime(pSS, 3) > Ckt_GetObjArrivalTime(pTS, 3))
+        if (Abc_ObjLevel(pSS) > Abc_ObjLevel(pTS))
             continue;
         if (pTS == pSS)
             continue;
@@ -569,7 +570,7 @@ void SASIMI_Manager_t::CollectNodeLACUnderNMED(IN Abc_Obj_t * pTS, IN Simulator_
         if (isSkip)
             continue;
         GetDNMED(appSmlt, oriOutputs, appOutputs, appOutputsNew, pTS, pSS, dErrors);
-        if (baseNMED + dErrors.first <= errorBoundInt || (baseNMED + dErrors.second <= errorBoundInt && Ckt_GetObjArrivalTime(pTS, 3) >= Ckt_GetObjArrivalTime(pSS, 3) +  invDelay * 1000)) {
+        if (baseNMED + dErrors.first <= errorBoundInt || (baseNMED + dErrors.second <= errorBoundInt && Abc_ObjLevel(pTS) >= Abc_ObjLevel(pSS) +  invDelay * 1000)) {
             double dArea = GetDArea(pTS, pSS, vMffcs);
             if (dErrors.first <= dErrors.second) {
                 Abc_Obj_t * pFanout = nullptr;
@@ -588,7 +589,7 @@ void SASIMI_Manager_t::CollectNodeLACUnderNMED(IN Abc_Obj_t * pTS, IN Simulator_
                     nodeLAC.Update(pTS, pSS, false, dErrors.first, dArea, tempFOM);
 
             }
-            else if (Ckt_GetObjArrivalTime(pTS, 3) >= Ckt_GetObjArrivalTime(pSS, 3) +  invDelay * 1000) {
+            else if (Abc_ObjLevel(pTS) >= Abc_ObjLevel(pSS) +  invDelay * 1000) {
                 dArea -= areaInv;
                 double tempFOM = dArea / (dErrors.second + 1e-10);
                 if ((dErrors.second < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.second >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
@@ -766,30 +767,31 @@ void SASIMI_Manager_t::GetDNMED(IN Simulator_t & appSmlt, IN vector <int64_t> & 
 
 double SASIMI_Manager_t::GetDArea(Abc_Obj_t * pTS, Abc_Obj_t * pSS, vector <Vec_Ptr_t *> & vMffcs)
 {
-    DASSERT(Abc_NtkIsMappedLogic(pTS->pNtk) && pTS->pNtk == pSS->pNtk);
-    Abc_Obj_t * pObj = nullptr;
-    int i = 0;
-    set <Abc_Obj_t *> m1;
-    Vec_PtrForEachEntry(Abc_Obj_t *, vMffcs[pTS->Id], pObj, i)
-        m1.insert(pObj);
-    set <Abc_Obj_t *> m2;
-    if (Abc_ObjIsNode(pSS)) {
-        Vec_PtrForEachEntry(Abc_Obj_t *, vMffcs[pSS->Id], pObj, i)
-            m2.insert(pObj);
-    }
-
-    vector <Abc_Obj_t *> mInter(max(m1.size(), m2.size()));
-    auto iter = set_intersection(m1.begin(), m1.end(), m2.begin(), m2.end(), mInter.begin());
-    mInter.resize(iter - mInter.begin());
-    vector <Abc_Obj_t *> mDiff(m1.size());
-    iter = set_difference(m1.begin(), m1.end(), mInter.begin(), mInter.end(), mDiff.begin());
-    mDiff.resize(iter - mDiff.begin());
-
-    double dArea = 0;
-    for (auto & pObj: mDiff)
-        dArea += Mio_GateReadArea( (Mio_Gate_t *)pObj->pData );
-
-    return dArea;
+//    DASSERT(Abc_NtkIsMappedLogic(pTS->pNtk) && pTS->pNtk == pSS->pNtk);
+//    Abc_Obj_t * pObj = nullptr;
+//    int i = 0;
+//    set <Abc_Obj_t *> m1;
+//    Vec_PtrForEachEntry(Abc_Obj_t *, vMffcs[pTS->Id], pObj, i)
+//        m1.insert(pObj);
+//    set <Abc_Obj_t *> m2;
+//    if (Abc_ObjIsNode(pSS)) {
+//        Vec_PtrForEachEntry(Abc_Obj_t *, vMffcs[pSS->Id], pObj, i)
+//            m2.insert(pObj);
+//    }
+//
+//    vector <Abc_Obj_t *> mInter(max(m1.size(), m2.size()));
+//    auto iter = set_intersection(m1.begin(), m1.end(), m2.begin(), m2.end(), mInter.begin());
+//    mInter.resize(iter - mInter.begin());
+//    vector <Abc_Obj_t *> mDiff(m1.size());
+//    iter = set_difference(m1.begin(), m1.end(), mInter.begin(), mInter.end(), mDiff.begin());
+//    mDiff.resize(iter - mDiff.begin());
+//
+//    double dArea = 0;
+//    for (auto & pObj: mDiff)
+//        dArea += Mio_GateReadArea( (Mio_Gate_t *)pObj->pData );
+//
+//    return dArea;
+    return 1;
 }
 
 

@@ -18,10 +18,14 @@ using namespace std::filesystem;
 void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::string outPrefix)
 {
     // init
+    string cnfPrefix = "AppTestOutput/MUXedCnf";
+    Abc_Ntk_t * pAppNtk = Abc_NtkDup(pOriNtk);
     PatchConst(pOriNtk); // add 0s and 1s to the original circuit
-    Simulator_t oriSmlt(pOriNtk, nFrame);   // initialize the original simulator
-    Simulator_t *pOriSmlt = &oriSmlt;       // the pointer to the simulator
-    string cnfPrefix = "Muxed_CNF";
+    PatchConst(pAppNtk); // add 0s and 1s to the approximate circuit
+    Simulator_t oriSmlt(pOriNtk, nFrame); // initialize the
+
+    Abc_NtkMapToSop( pAppNtk );
+    Abc_NtkSopToAig( pAppNtk ); // transform to AIG
 
     // iteration
     double error = 0;
@@ -32,31 +36,35 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
     random_device rd;
     clock_t st = clock();
     cntRound = 0;
-
-    cout << "--------------- network traversal begin... ---------------" << endl;
+    cout << "--------------- round " << ++cntRound << " ---------------" << endl;
+    // if (cntRound == 4)
+    //     break;
+    // initialize the simulator with the approximate circuit
+    Simulator_t * pAppSmlt = new Simulator_t(pAppNtk, nFrame);
     // unsigned seed = static_cast <unsigned> (rd());   // random generation
     unsigned seed = 2531465778;         // a fixed generation
     cout << "seed = " << seed << endl;
     cout << "maxLevel = " << maxLevel << endl;
     oriSmlt.Input(seed);        // initialize PI for original simulator
     oriSmlt.Simulate();
+    pAppSmlt->Input(seed);      // initialize PI for approximate simulator
+    pAppSmlt->Simulate();
     // GetCPM(oriSmlt, *pAppSmlt, bds);
-    GetCPMOneCut(oriSmlt, *pOriSmlt, bds);
-    Abc_NtkDelayTrace(pOriNtk, nullptr, nullptr, 0);    // update the delay time
-    CollectMFFC(*pOriSmlt, vMffcs);     // collect the Mffcs of the approximate simulator
+    GetCPMOneCut(oriSmlt, *pAppSmlt, bds);
+//    Abc_NtkDelayTrace(pAppNtk, nullptr, nullptr, 0);    // update the delay time
+    CollectMFFC(*pAppSmlt, vMffcs);     // collect the Mffcs of the approximate simulator
     if (metricType == Metric_t::ER)     // get the LACs
-        // CollectAllLACsUnderER(oriSmlt, *pAppSmlt, bds, vMffcs, nodeLACs);
-        CollectAllLACsUnderER(oriSmlt, *pOriSmlt, bds, vMffcs, nodeLACs);
+        CollectAllLACsUnderER(oriSmlt, *pAppSmlt, bds, vMffcs, nodeLACs);
     else
-        CollectAllLACsUnderNMED(oriSmlt, *pOriSmlt, bds, vMffcs, nodeLACs);
+        CollectAllLACsUnderNMED(oriSmlt, *pAppSmlt, bds, vMffcs, nodeLACs);
     FreeMFFC(vMffcs);                   // free the memory
     // sort the LACs according to their scores
-     SortCandLACs(nodeLACs, pOriSmlt->GetFrameNum(), candLACs);
-    // apply the best LACs. <res> = 1 if error bound is broke, and 0 if not.
-    // int res = ApplyBestLAC(oriSmlt, *pAppSmlt, candLACs, 10, outPrefix, seed);
+    SortCandLACs(nodeLACs, pAppSmlt->GetFrameNum(), candLACs);
 
     // generate CNF expression according to the muxed network
-    CreateMuxedCNF(pOriNtk, candLACs, cnfPrefix);
+
+    Ckt_WriteBlif( pAppNtk, "appNtk/pAppNtk.blif" );
+    CreateMuxedCNF(pAppNtk, candLACs, cnfPrefix);
 
     // not consider them yet
 //    // solve the CNF using SAT and return the rersult thorugh <res>
@@ -67,12 +75,22 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
 }
 
 // not finished
-void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & candLACs, IN std::string cnfPrefix )
+void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector <LAC_t> & candLACs, IN std::string cnfPrefix )
 {
     // add muxes to all the nodes with LAC candidates
-    Abc_Ntk_t * pMUXedNtk = Abc_NtkDup(pOriNtk);
-    AddMuxes(pMUXedNtk, candLACs);      // done
-    Ckt_WriteBlif( pMUXedNtk, "appNtk/Alexanderia_test_1.blif" );
+    Abc_Ntk_t * pOriNtk = Abc_NtkDup( pMUXedNtk );
+    AddMuxes( pMUXedNtk, candLACs );      // done
+    Ckt_WriteBlif( pOriNtk, "appNtk/Alexanderia_original.blif" );
+    Ckt_WriteBlif( pMUXedNtk, "appNtk/Alexanderia_MUXAdded.blif" );
+//    Abc_Obj_t * pObj;
+//    int i, j;
+//    Abc_Obj_t * pFanin;
+//    Abc_NtkForEachObj( pMUXedNtk, pObj, i ) {
+//        cout << Abc_ObjName( pObj ) << ":";
+//        Abc_ObjForEachFanin( pObj, pFanin, j )
+//            cout << Abc_ObjName( pFanin ) << " ";
+//        cout << endl;
+//    }
 
     // not consider them yet
 //    // write the networks to aiger format
@@ -98,8 +116,8 @@ void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pOriNtk, IN std::vector <
 void AddMuxes ( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & candLACs ) {
     for ( auto & candLAC : candLACs ) {
         Abc_Obj_t * selection = Abc_NtkCreatePi(pOriNtk);
-        Abc_Obj_t * pMux = Abc_NtkCreateNodeMux(pOriNtk, selection, candLAC.GetTS(), candLAC.GetSS() );
-        Abc_ObjTransferFanoutsExceptMux( candLAC.GetSS(), pMux, pMux );
+        Abc_Obj_t * pMux = Abc_NtkCreateNodeMux( pOriNtk, selection, candLAC.GetSS(), candLAC.GetTS() );
+        Abc_ObjTransferFanoutsExceptMux( candLAC.GetTS(), pMux, pMux );
     }
 }
 
