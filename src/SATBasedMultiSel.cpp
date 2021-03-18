@@ -86,29 +86,14 @@ void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector
 
     cout << "strash is successful!" << endl;
 
-    Abc_Ntk_t * pMiter = CreateMiterXorMulti ( pNtkOriStrash, pNtkMUXedStrash );
-//    Abc_Ntk_t * pMiter = CreateMiterXorMulti ( pOriNtk, pMUXedNtk );
+    Abc_Ntk_t * pMiter = CreateMiterXorMulti ( pNtkMUXedStrash, pNtkOriStrash );
+
+    cout << "miter is created successfully!" << endl;
+
     Ckt_WriteBlif( pMiter, "appNtk/Alexanderia_Miter.blif" );
 
-    // not consider them yet
-    // write the networks to aiger format
-//    char * pFileNameMUXed = "MUXedNtk.aig", * pFileNameOri = "OriNtk.aig";
-//    Io_Write(pMUXedNtk, pFileNameMUXed, IO_FILE_AIGER );
-//    Io_Write(pOriNtk, pFileNameOri, IO_FILE_AIGER );
-//    // read the aig files just created
-//    Aig_Man_t * aigManMUXed = Ioa_ReadAiger(pFileNameMUXed, 1);
-//    Aig_ManPrintStats(aigManMUXed);
-//    Aig_Man_t * aigManOri = Ioa_ReadAiger(pFileNameOri, 1);
-//    Aig_ManPrintStats(aigManOri);
-//    // create a mitor of the Muxed network and the original network
-//    Aig_Man_t * aigManMiter = Aig_ManCreateMiter();
-//    // transform the aig to cnf
-//    Cnf_Data_t * cnfExpr = Cnf_DeriveSimple(aigMan,0);
-//    // add additional clauses to <cnfExpr> corresponding to universal PI quantitfication
-//    AddUnivPIQnt(cnfExpr);
-//    // using sat solver to solve the cnf
-//    sat_solver * solver = sat_solver_new();
-//    solver = (sat_solver *) Cnf_DataWriteIntoSolver(cnfExpr, 1, 0);
+    // TODO: to transform the miter to CNF format and add universal quantification to all the original primary inputs
+
 }
 
 void AddMuxes ( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & candLACs ) {
@@ -207,7 +192,7 @@ static Abc_Ntk_t * CreateMiterXorMulti ( Abc_Ntk_t * pNtk1, Abc_Ntk_t * pNtk2 ) 
         pObjNew = Abc_NtkCreatePi( pNtkMiter );
         // remember this PI in the old PIs
         pObj->pCopy = pObjNew;
-        if ( i < Abc_NtkPiNum( pNtk2 ) ) {
+        if ( i < Abc_NtkCiNum( pNtk2 ) ) {
             pObj = Abc_NtkCi(pNtk2, i);
             pObj->pCopy = pObjNew;
         }
