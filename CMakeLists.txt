@@ -26,7 +26,7 @@ add_definitions(-DLIN64 -g -Wall -O3 -std=c++17)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 
 # Add an executable with the above sources
-add_executable(sasimi-vecbee ${sources} src/SATBasedMultiSel.cpp src/test.cpp)
+add_executable(sasimi-vecbee ${sources} src/SATBasedMultiSel.cpp src/test.cpp src/strashtest.cpp src/strashtest.h)
 
 # link libraries, with -lrt, which seems not working on Mac
 # target_link_libraries(sasimi-vecbee -labc -lm -ldl -rdynamic -lreadline -ltermcap -lpthread -lstdc++ -lrt -lstdc++fs)

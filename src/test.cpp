@@ -1,6 +1,6 @@
-//
+
 // Created by 娄辰飞 on 2021/3/9.
-//
+
 
 #include "headers.h"
 #include "cmdline.h"
@@ -50,26 +50,16 @@ int main(int argc, char * argv[])
     // start abc
     Abc_Start();
 
-    // read library and circuit
-    Abc_Frame_t * pAbc = Abc_FrameGetGlobalFrame();
-    ostringstream command("");
-    command << "read " << library;
-    cout << "abc command " << command.str() << endl;
-    DASSERT(!Cmd_CommandExecute(pAbc, command.str().c_str()));
-    command.str("");
-    command << "read_blif " << inputPath.string();
-    cout << "abc command " << command.str() << endl;
-    DASSERT(!Cmd_CommandExecute(pAbc, command.str().c_str()));
-    command.str("");
-    command << "print_stats";
-    cout << "abc command " << command.str() << endl;
-    DASSERT(!Cmd_CommandExecute(pAbc, command.str().c_str()));
+    char * fileName1 = "data/arithmetic/adder.blif";
+    char * fileName2 = "data/su/c1908.blif";    // cannot open. Don't know why
+    Abc_Ntk_t * pNtkNetlist = Io_ReadBlif( fileName1, 1 );
 
     // sasimi + vecbee
-    Abc_Ntk_t * pNtk = Abc_FrameReadNtk(pAbc);
-    SASIMI_Manager_t sasimiMng(pNtk, frameNumber, maxLevel, metricType, errorBound);
+//    Abc_Ntk_t * pNtk = Abc_FrameReadNtk(pAbc);
+    Abc_Ntk_t * pNtkLogic = Abc_NtkToLogic( pNtkNetlist );
+    SASIMI_Manager_t sasimiMng(pNtkLogic, frameNumber, maxLevel, metricType, errorBound);
 //    sasimiMng.GreedySelection(pNtk, outPrefix.string());
-    sasimiMng.SATBasedMultiSelection( pNtk, outPrefix.string() );
+    sasimiMng.SATBasedMultiSelection( pNtkLogic, outPrefix.string() );
 
     // stop abc
     Abc_Stop();

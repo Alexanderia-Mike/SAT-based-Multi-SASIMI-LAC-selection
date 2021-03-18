@@ -4,13 +4,19 @@
 
 #include "sasimi.h"
 
+
 // transfer all the fanouts of <pNodeFrom> to <pNodeTo>
 static void Abc_ObjTransferFanoutsExceptMux ( IN Abc_Obj_t * pNodeFrom, IN Abc_Obj_t * pNodeTo, IN Abc_Obj_t * pMux );
 // to collect all the fanouts of <pNode> except for the <pMux>, and then store them in <vNodes>
 static void Abc_NodeCollectFanoutsExceptMux ( IN Abc_Obj_t * pNode, IN Vec_Ptr_t * vNodes, IN Abc_Obj_t * pMux );
 // add muxes that takes inputs as the node and its LAC, and outputs to original fanouts of the old nodes
-static void AddMuxes (IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & candLACs);
+static void AddMuxes ( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & candLACs );
+// create a miter network that combines each PO from <pNtk1> and <pNtk2> using Xors
+static Abc_Ntk_t * CreateMiterXorMulti ( Abc_Ntk_t * pNtk1, Abc_Ntk_t * pNtk2 );
+// print the relative information for the added MUX
+static void printMuxInfo( Abc_Obj_t * pTS, Abc_Obj_t * pSS, Abc_Obj_t * pMUX );
 
+static void printFirstXPData( Abc_Ntk_t * pNtk, int printNum );
 
 using namespace std;
 using namespace std::filesystem;
@@ -22,10 +28,8 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
     Abc_Ntk_t * pAppNtk = Abc_NtkDup(pOriNtk);
     PatchConst(pOriNtk); // add 0s and 1s to the original circuit
     PatchConst(pAppNtk); // add 0s and 1s to the approximate circuit
-    Simulator_t oriSmlt(pOriNtk, nFrame); // initialize the
-
-    Abc_NtkMapToSop( pAppNtk );
-    Abc_NtkSopToAig( pAppNtk ); // transform to AIG
+    Simulator_t oriSmlt(pOriNtk, nFrame); // initialize the oriSimulator
+//    printFirstXPData( pAppNtk, 10 );    // print the pData for the first 10 nodes in <pAppNtk>
 
     // iteration
     double error = 0;
@@ -34,12 +38,9 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
     vector <LAC_t> nodeLACs;        // all the LACs
     vector <LAC_t> candLACs;        // all the candidates
     random_device rd;
-    clock_t st = clock();
+
     cntRound = 0;
-    cout << "--------------- round " << ++cntRound << " ---------------" << endl;
-    // if (cntRound == 4)
-    //     break;
-    // initialize the simulator with the approximate circuit
+    cout << "--------------- SAT based Multiple LAC Selection now begins ---------------" << endl;
     Simulator_t * pAppSmlt = new Simulator_t(pAppNtk, nFrame);
     // unsigned seed = static_cast <unsigned> (rd());   // random generation
     unsigned seed = 2531465778;         // a fixed generation
@@ -49,9 +50,7 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
     oriSmlt.Simulate();
     pAppSmlt->Input(seed);      // initialize PI for approximate simulator
     pAppSmlt->Simulate();
-    // GetCPM(oriSmlt, *pAppSmlt, bds);
     GetCPMOneCut(oriSmlt, *pAppSmlt, bds);
-//    Abc_NtkDelayTrace(pAppNtk, nullptr, nullptr, 0);    // update the delay time
     CollectMFFC(*pAppSmlt, vMffcs);     // collect the Mffcs of the approximate simulator
     if (metricType == Metric_t::ER)     // get the LACs
         CollectAllLACsUnderER(oriSmlt, *pAppSmlt, bds, vMffcs, nodeLACs);
@@ -62,8 +61,6 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
     SortCandLACs(nodeLACs, pAppSmlt->GetFrameNum(), candLACs);
 
     // generate CNF expression according to the muxed network
-
-    Ckt_WriteBlif( pAppNtk, "appNtk/pAppNtk.blif" );
     CreateMuxedCNF(pAppNtk, candLACs, cnfPrefix);
 
     // not consider them yet
@@ -74,26 +71,27 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
 //    cout << "time = " << clock() - st << " us" << endl;
 }
 
-// not finished
+// add muxes to all the nodes with LAC candidates
 void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector <LAC_t> & candLACs, IN std::string cnfPrefix )
 {
-    // add muxes to all the nodes with LAC candidates
     Abc_Ntk_t * pOriNtk = Abc_NtkDup( pMUXedNtk );
     AddMuxes( pMUXedNtk, candLACs );      // done
-    Ckt_WriteBlif( pOriNtk, "appNtk/Alexanderia_original.blif" );
-    Ckt_WriteBlif( pMUXedNtk, "appNtk/Alexanderia_MUXAdded.blif" );
-//    Abc_Obj_t * pObj;
-//    int i, j;
-//    Abc_Obj_t * pFanin;
-//    Abc_NtkForEachObj( pMUXedNtk, pObj, i ) {
-//        cout << Abc_ObjName( pObj ) << ":";
-//        Abc_ObjForEachFanin( pObj, pFanin, j )
-//            cout << Abc_ObjName( pFanin ) << " ";
-//        cout << endl;
-//    }
+    Ckt_WriteBlif( pOriNtk, "appNtk/Alexanderia_original.blif" ); // no problem
+    Ckt_WriteBlif( pMUXedNtk, "appNtk/Alexanderia_MUXAdded.blif" );   // no problem
+    cout << "the checking result of oriNtk is " << Abc_NtkCheck( pOriNtk ) << endl;
+    cout << "the checking result of MUXedNtk is " << Abc_NtkCheck( pMUXedNtk ) << endl;
+
+    Abc_Ntk_t * pNtkOriStrash = Abc_NtkStrash( pOriNtk, 0, 0, 0 );
+    Abc_Ntk_t * pNtkMUXedStrash = Abc_NtkStrash( pMUXedNtk, 0, 0, 0 );
+
+    cout << "strash is successful!" << endl;
+
+    Abc_Ntk_t * pMiter = CreateMiterXorMulti ( pNtkOriStrash, pNtkMUXedStrash );
+//    Abc_Ntk_t * pMiter = CreateMiterXorMulti ( pOriNtk, pMUXedNtk );
+    Ckt_WriteBlif( pMiter, "appNtk/Alexanderia_Miter.blif" );
 
     // not consider them yet
-//    // write the networks to aiger format
+    // write the networks to aiger format
 //    char * pFileNameMUXed = "MUXedNtk.aig", * pFileNameOri = "OriNtk.aig";
 //    Io_Write(pMUXedNtk, pFileNameMUXed, IO_FILE_AIGER );
 //    Io_Write(pOriNtk, pFileNameOri, IO_FILE_AIGER );
@@ -114,10 +112,35 @@ void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector
 }
 
 void AddMuxes ( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & candLACs ) {
+    int count = 0; int i;
+    bool continue_flag; // if true, continue the outer loop
+    Abc_Obj_t * pObj;
     for ( auto & candLAC : candLACs ) {
+        string test;
+        continue_flag = false;
+        Abc_ObjForEachFanout( candLAC.GetTS(), pObj, i )
+            if ( pObj->Id == candLAC.GetSS()->Id )
+                { continue_flag = true;   break; }
+        if ( continue_flag )    continue;
         Abc_Obj_t * selection = Abc_NtkCreatePi(pOriNtk);
         Abc_Obj_t * pMux = Abc_NtkCreateNodeMux( pOriNtk, selection, candLAC.GetSS(), candLAC.GetTS() );
+        // print out informations
+//        cout << "the mux is created, the name is: " << Abc_ObjName( pMux ) << endl;
+//        cout << "--the name of the TS and SS is " << Abc_ObjName( candLAC.GetTS() ) << " and " << Abc_ObjName( candLAC.GetSS() ) << ", respectively" << endl;
+//        cout << "--before the fanout transformation:" << endl;
+//        printMuxInfo( candLAC.GetTS(), candLAC.GetSS(), pMux );
+        // transfer all the fanouts of TS to MUX, except for the MUX itself
         Abc_ObjTransferFanoutsExceptMux( candLAC.GetTS(), pMux, pMux );
+        // print out information
+//        cout << "--after the fanout transformation:" << endl << endl;
+//        printMuxInfo( candLAC.GetTS(), candLAC.GetSS(), pMux );
+
+        count ++;
+        test = (char *) pMux->pData;
+        cout << "--pData for MUX is " << endl << test << endl;
+
+//        if ( count >= 1 )
+//            break;
     }
 }
 
@@ -131,6 +154,7 @@ void Abc_ObjTransferFanoutsExceptMux ( IN Abc_Obj_t * pNodeFrom, IN Abc_Obj_t * 
     assert( pNodeFrom->pNtk == pNodeTo->pNtk );
     assert( pNodeFrom != pNodeTo );
     assert( !Abc_ObjIsNode(pNodeFrom) || Abc_ObjFanoutNum(pNodeFrom) > 0 );
+
     // get the fanouts of the old node
     nFanoutsOld = Abc_ObjFanoutNum(pNodeTo);
     vFanouts = Vec_PtrAlloc( nFanoutsOld );
@@ -142,6 +166,7 @@ void Abc_ObjTransferFanoutsExceptMux ( IN Abc_Obj_t * pNodeFrom, IN Abc_Obj_t * 
     assert( Abc_ObjFanoutNum(pNodeFrom) == 1 );
     assert( Abc_ObjFanoutNum(pNodeTo) == nFanoutsOld + vFanouts->nSize );
     Vec_PtrFree( vFanouts );
+
 }
 
 void Abc_NodeCollectFanoutsExceptMux ( IN Abc_Obj_t * pNode, IN Vec_Ptr_t * vNodes, IN Abc_Obj_t * pMux )
@@ -153,4 +178,110 @@ void Abc_NodeCollectFanoutsExceptMux ( IN Abc_Obj_t * pNode, IN Vec_Ptr_t * vNod
         if ( pFanout->Id != pMux->Id )    // not the pMux
             Vec_PtrPush(vNodes, pFanout);
     }
+}
+
+// <pNtk1> should be the MUXed network, while <pNtk2> is the original network
+static Abc_Ntk_t * CreateMiterXorMulti ( Abc_Ntk_t * pNtk1, Abc_Ntk_t * pNtk2 ) {
+    char Buffer[1000];
+    Abc_Ntk_t * pNtkMiter;
+
+    assert( Abc_NtkIsStrash(pNtk1) );
+    assert( Abc_NtkIsStrash(pNtk2) );
+
+    // start the new network
+    pNtkMiter = Abc_NtkAlloc( ABC_NTK_STRASH, ABC_FUNC_AIG, 1 );
+    sprintf( Buffer, "%s_%s_miter", pNtk1->pName, pNtk2->pName );
+    pNtkMiter->pName = Extra_UtilStrsav(Buffer);
+
+    // perform strashing
+    /************************************* Abc_NtkMiterPrepare *************************************/
+    //    Abc_NtkMiterPrepare( pNtk1, pNtk2, pNtkMiter, fComb, nPartSize, fMulti );
+    //  fComb = 1; fMulti = 1; fImplicit is not important; nPartSize is not important
+    Abc_Obj_t * pObj, * pObjNew;
+    int i;
+    Abc_AigConst1(pNtk1)->pCopy = Abc_AigConst1(pNtkMiter);
+    Abc_AigConst1(pNtk2)->pCopy = Abc_AigConst1(pNtkMiter);
+    // create new PIs and remember them in the old PIs
+    Abc_NtkForEachCi( pNtk1, pObj, i )
+    {
+        pObjNew = Abc_NtkCreatePi( pNtkMiter );
+        // remember this PI in the old PIs
+        pObj->pCopy = pObjNew;
+        if ( i < Abc_NtkPiNum( pNtk2 ) ) {
+            pObj = Abc_NtkCi(pNtk2, i);
+            pObj->pCopy = pObjNew;
+        }
+        // add name
+        Abc_ObjAssignName( pObjNew, Abc_ObjName(pObj), NULL );
+    }
+    // create POs
+    Abc_NtkForEachCo( pNtk1, pObj, i )
+    {
+        pObjNew = Abc_NtkCreatePo( pNtkMiter );
+        Abc_ObjAssignName( pObjNew, "miter", Abc_ObjName(pObjNew) );
+    }
+
+    /************************************* Abc_NtkMiterAddOne *************************************/
+    //    Abc_NtkMiterAddOne( pNtk1, pNtkMiter );
+    Abc_Obj_t * pNode;
+    assert( Abc_NtkIsDfsOrdered(pNtk1) );
+    Abc_AigForEachAnd( pNtk1, pNode, i )
+        pNode->pCopy = Abc_AigAnd( (Abc_Aig_t *)pNtkMiter->pManFunc, Abc_ObjChild0Copy(pNode), Abc_ObjChild1Copy(pNode) );
+
+    //    Abc_NtkMiterAddOne( pNtk2, pNtkMiter );
+    assert( Abc_NtkIsDfsOrdered(pNtk2) );
+    Abc_AigForEachAnd( pNtk2, pNode, i )
+        pNode->pCopy = Abc_AigAnd( (Abc_Aig_t *)pNtkMiter->pManFunc, Abc_ObjChild0Copy(pNode), Abc_ObjChild1Copy(pNode) );
+
+    /************************************* Abc_NtkMiterFinalize *************************************/
+    //    Abc_NtkMiterFinalize( pNtk1, pNtk2, pNtkMiter, fComb, nPartSize, fImplic, fMulti );
+    Abc_Obj_t * pMiter;
+    // collect the CO nodes for the miter
+    Abc_NtkForEachCo( pNtk1, pNode, i ) {
+        pMiter = Abc_AigXor( (Abc_Aig_t *)pNtkMiter->pManFunc, Abc_ObjChild0Copy(pNode), Abc_ObjChild0Copy(Abc_NtkCo(pNtk2, i)) );
+        Abc_ObjAddFanin( Abc_NtkPo(pNtkMiter,i), pMiter );
+    }
+
+    /************************************* rest of Abc_NtkMiterInt *************************************/
+
+    Abc_AigCleanup((Abc_Aig_t *)pNtkMiter->pManFunc);
+
+    // make sure that everything is okay
+    if ( !Abc_NtkCheck( pNtkMiter ) )
+    {
+        printf( "Abc_NtkMiter: The network check has failed.\n" );
+        Abc_NtkDelete( pNtkMiter );
+        return NULL;
+    }
+    return pNtkMiter;
+}
+
+static void printMuxInfo( Abc_Obj_t * pTS, Abc_Obj_t * pSS, Abc_Obj_t * pMUX ) {
+    Abc_Obj_t * pFanout, * pFanin;
+    int i;
+    cout << "----the number of fanouts of TS is " << Abc_ObjFanoutNum( pTS ) << endl;
+    Abc_ObjForEachFanout( pTS, pFanout, i )
+        cout << "------the " << i << "th fanout's name of TS is " << Abc_ObjName( pFanout ) << endl;
+    cout << "----the number of fanouts of SS is " << Abc_ObjFanoutNum( pSS ) << endl;
+    Abc_ObjForEachFanout( pSS, pFanout, i )
+        cout << "------the " << i << "th fanout's name of SS is " << Abc_ObjName( pFanout ) << endl;
+    cout << "----the number of fanins of MUX is " << Abc_ObjFaninNum( pMUX ) << endl;
+    Abc_ObjForEachFanin( pMUX, pFanin, i )
+        cout << "-------the " << i << "th fanin's name of MUX is " << Abc_ObjName( pFanin ) << endl;
+    cout << "----the number of fanouts of MUX is " << Abc_ObjFanoutNum( pMUX ) << endl;
+    Abc_ObjForEachFanout( pMUX, pFanout, i )
+        cout << "-------the " << i << "th fanout's name of MUX is " << Abc_ObjName( pFanout ) << endl;
+}
+
+static void printFirstXPData( Abc_Ntk_t * pNtk, int printNum ) {
+    Abc_Obj_t * pNode;
+    int i, j=0;
+    string test;
+    cout << "the pData for the first " << printNum << " nodes for the network " << Abc_NtkName( pNtk ) << endl;
+    Abc_NtkForEachNode( pNtk, pNode, i ) {
+            test = (char *) pNode->pData;
+            cout << "pData is " << test << endl;
+            ++j;
+            if ( j >= printNum )   break;
+        }
 }
