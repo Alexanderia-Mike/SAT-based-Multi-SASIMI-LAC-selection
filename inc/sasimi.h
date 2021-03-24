@@ -68,12 +68,16 @@ public:
      *      collect the available SASIMI local approximate change of all the nodes in 
      *      the network; then feed the original node together with its LAC into a Mux, 
      *      whose output replaces the fanouts of the original node. Repeat this manipulation
-     *      to all the nodes in the original circuit. Then transform the resulting
+     *      to all the nodes in the original circuit. Then, after adding the subtractor and
+     *      the comparator with the <threshold>, transform the resulting
      *      network into a cnf expression and solve it by a SAT solver. If SAT, the
      *      resulting network is stored in <outPrefix>_sth.blif. Otherwise, 
      *      output the message that no LACs are available.
+     *
+     *  [require]
+     *      the size of <threshold> should be the same as the number of POs in <pOriNtk>
      */
-    void SATBasedMultiSelection(IN Abc_Ntk_t * pOriNtk, IN std::string outPrefix);
+    void SATBasedMultiSelection( IN Abc_Ntk_t * pOriNtk, IN std::string outPrefix, int threshold[] );
 
     /** CreateMuxedCNF ***************************************************************
      * 
@@ -84,7 +88,7 @@ public:
      *      <nodeLACs>, create the CNF encoding of the Muxed network and store
      *      the result in the file <cnfPrefix>.cnf
      */
-    void CreateMuxedCNF(IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & nodeLACs, IN std::string cnfPrefix);
+    void CreateMuxedCNF( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & nodeLACs, IN std::string cnfPrefix, int threshold[] );
 
     /** SatSolveApply ****************************************************************
      * 

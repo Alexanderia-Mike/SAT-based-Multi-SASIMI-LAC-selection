@@ -59,7 +59,13 @@ int main(int argc, char * argv[])
     Abc_Ntk_t * pNtkLogic = Abc_NtkToLogic( pNtkNetlist );
     SASIMI_Manager_t sasimiMng(pNtkLogic, frameNumber, maxLevel, metricType, errorBound);
 //    sasimiMng.GreedySelection(pNtk, outPrefix.string());
-    sasimiMng.SATBasedMultiSelection( pNtkLogic, outPrefix.string() );
+
+    int size = Abc_NtkPoNum( pNtkLogic );
+    int threshold[size];
+    for ( int i = 0; i < size; ++i )
+        threshold[i] = 0;
+    threshold[size/3] = 1;
+    sasimiMng.SATBasedMultiSelection( pNtkLogic, outPrefix.string(), threshold );
 
     // stop abc
     Abc_Stop();
