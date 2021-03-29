@@ -32,8 +32,10 @@ static Abc_Obj_t * ConstNode ( Abc_Ntk_t * pNtk, int n );
 // return the corresponding array of const nodes with respect to the integer array <threshold>.
 // REQUIRE: the size of <threshold> should be the same as <size>
 static Abc_Obj_t ** ConstNodes ( Abc_Ntk_t * pNtk, int threshold[], int size );
-
+// to check that everything is Okay with the created Miter
 static void MiterCheck ( Abc_Ntk_t * pNtkMiter, Abc_Ntk_t * pNtk1 );
+// to extract the IDs of original PIs and MUX PIs in cnf and store them in <OriPIIDs> and <MUXPIIDs>, respectively
+void assignPIIDs( Cnf_Dat_t * miterCnfData, int * OriPIIDs, int * MUXPIIDs, int OriPINum, int MUXPINum, bool print );
 
 
 using namespace std;
@@ -104,16 +106,40 @@ void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector
 
     cout << "strash is successful!" << endl;
 
-    Abc_Ntk_t * pMiter = CreateMiterXorMulti ( pNtkMUXedStrash, pNtkOriStrash, threshold );
+    Abc_Ntk_t * pMiter = CreateMiterXorMulti ( pNtkMUXedStrash, pNtkOriStrash, threshold);
+    assert( Abc_NtkPiNum( pMiter ) == Abc_NtkPiNum( pMUXedNtk ) );
 
     cout << "miter is created successfully!" << endl;
-
     Ckt_WriteBlif( pMiter, "intermediate-results/Alexanderia_Miter.blif" );
 
-    char * pFileName = "intermediate-results/MiterCNF.cnf";
-    int cnfWriteResult = Io_WriteCnf( pMiter, pFileName, 0 );
-    cout << "cnf write result is " << cnfWriteResult << endl;
+    // transform the network to cnf
+    char * aigFileName = "intermediate-results/MiterAIG.aiger";
+    Io_Write(pMiter, aigFileName, IO_FILE_AIGER );  // the index of PIs are indexed from 1 to <NumCIs>. Temporarily stored in <pObj->pCopy>. See lines 699 ~ 704 in "src/base/io/ioWriteAiger.c" for more details
+    Aig_Man_t * miterAigMan = Ioa_ReadAiger( aigFileName, 1 );  //
+    Aig_ManPrintStats( miterAigMan );
+    Cnf_Dat_t * miterCnfData = Cnf_DeriveSimple( miterAigMan, 0 );  // the variable index in cnf is derived from iterating all COs, Internal nodes, CIs in the aig manager. For more details, see lines 624 ~ 630 in "src/sat/cnf/cnfWrite.c"
 
+    // get PI's IDs
+    int OriPINum = Abc_NtkPiNum( pNtkOriStrash ), MUXPINum = Abc_NtkPiNum( pMiter ) - OriPINum;
+    int OriPIIDs[OriPINum], MUXPIIDs[MUXPINum];
+    assignPIIDs( miterCnfData, OriPIIDs, MUXPIIDs, OriPINum, MUXPINum, false );
+
+    // write the cnf into the file
+    char * cnfFileName = "intermediate-results/MiterCNF.cnf";
+    Cnf_DataWriteIntoFile( miterCnfData, cnfFileName, 0, NULL, NULL );  // since fReadable=0, all the variables are added by 1.
+
+    // debug
+//    Abc_Obj_t * pObj; int i; Aig_Obj_t * paObj;
+//    cout << "for the PIs in original network, there are in total " << Abc_NtkPiNum( pOriNtk ) << " PIs, and their names are: " << endl;
+//    Abc_NtkForEachPi( pNtkOriStrash, pObj, i )
+//        cout << Abc_ObjName( pObj ) << ", ";
+//    cout << endl << endl << "for the PIs in MUXed network, there are in total " << Abc_NtkPiNum( pMUXedNtk ) << " PIs, and their names are: " << endl;
+//    Abc_NtkForEachPi( pNtkMUXedStrash, pObj, i )
+//        cout << Abc_ObjName( pObj ) << ", ";
+//    cout << endl << endl << "for the PIs in miter network, there are in total " << Abc_NtkPiNum( pMiter ) << " PIs, and their names are: " << endl;
+//    Abc_NtkForEachPi( pMiter, pObj, i )
+//        cout << Abc_ObjName( pObj ) << ", ";
+//    cout << endl << endl << "for the PIs in miter aig, there are in total " << Aig_ManCiNum( miterAigMan ) << " PIs, and their names are: " << endl;
 }
 
 void AddMuxes ( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & candLACs ) {
@@ -186,7 +212,7 @@ void Abc_NodeCollectFanoutsExceptMux ( IN Abc_Obj_t * pNode, IN Vec_Ptr_t * vNod
 }
 
 // <pNtk1> should be the MUXed network, while <pNtk2> is the original network
-static Abc_Ntk_t * CreateMiterXorMulti ( Abc_Ntk_t * pNtk1, Abc_Ntk_t * pNtk2, int threshold[] ) {
+static Abc_Ntk_t * CreateMiterXorMulti ( Abc_Ntk_t * pNtk1, Abc_Ntk_t * pNtk2, int threshold[]) {
     char Buffer[1000];
     Abc_Ntk_t * pNtkMiter;
 
@@ -207,6 +233,7 @@ static Abc_Ntk_t * CreateMiterXorMulti ( Abc_Ntk_t * pNtk1, Abc_Ntk_t * pNtk2, i
     Abc_AigConst1(pNtk1)->pCopy = Abc_AigConst1(pNtkMiter);
     Abc_AigConst1(pNtk2)->pCopy = Abc_AigConst1(pNtkMiter);
     // create new PIs and remember them in the old PIs
+    // also, get the IDs of the PIs of the miter at the same time
     Abc_NtkForEachPi( pNtk1, pObj, i )
     {
         pObjNew = Abc_NtkCreatePi( pNtkMiter );
@@ -236,12 +263,12 @@ static Abc_Ntk_t * CreateMiterXorMulti ( Abc_Ntk_t * pNtk1, Abc_Ntk_t * pNtk2, i
         Abc_ObjAssignName( Abc_ObjFanin0(pObjNew),  Abc_ObjName(Abc_ObjFanin0(pObj)), "_2" );
         Abc_ObjAssignName( Abc_ObjFanout0(pObjNew), Abc_ObjName(Abc_ObjFanout0(pObj)), "_2" );
     }
-//    // create POs
-//    Abc_NtkForEachCo( pNtk1, pObj, i )
-//    {
-//        pObjNew = Abc_NtkCreatePo( pNtkMiter );
-//        Abc_ObjAssignName( pObjNew, "miter", Abc_ObjName(pObjNew) );
-//    }
+    //    // create POs
+    //    Abc_NtkForEachCo( pNtk1, pObj, i )
+    //    {
+    //        pObjNew = Abc_NtkCreatePo( pNtkMiter );
+    //        Abc_ObjAssignName( pObjNew, "miter", Abc_ObjName(pObjNew) );
+    //    }
 
     /************************************* Abc_NtkMiterAddOne *************************************/
     //    Abc_NtkMiterAddOne( pNtk1, pNtkMiter );
@@ -288,11 +315,11 @@ static Abc_Ntk_t * CreateMiterXorMulti ( Abc_Ntk_t * pNtk1, Abc_Ntk_t * pNtk2, i
     // create the final output
     Abc_Obj_t * result = Abc_NtkCreatePo( pNtkMiter );
     Abc_ObjAddFanin( result, compareRes );
-//    // collect the CO nodes for the miter
-//    Abc_NtkForEachCo( pNtk1, pNode, i ) {
-//        pMiter = Abc_AigXor( (Abc_Aig_t *)pNtkMiter->pManFunc, Abc_ObjChild0Copy(pNode), Abc_ObjChild0Copy(Abc_NtkCo(pNtk2, i)) );
-//        Abc_ObjAddFanin( Abc_NtkPo(pNtkMiter,i), pMiter );
-//    }
+    //    // collect the CO nodes for the miter
+    //    Abc_NtkForEachCo( pNtk1, pNode, i ) {
+    //        pMiter = Abc_AigXor( (Abc_Aig_t *)pNtkMiter->pManFunc, Abc_ObjChild0Copy(pNode), Abc_ObjChild0Copy(Abc_NtkCo(pNtk2, i)) );
+    //        Abc_ObjAddFanin( Abc_NtkPo(pNtkMiter,i), pMiter );
+    //    }
 
     /************************************* rest of Abc_NtkMiterInt *************************************/
 
@@ -415,5 +442,26 @@ static void MiterCheck ( Abc_Ntk_t * pNtkMiter, Abc_Ntk_t * pNtk1 ) {
         cout << "the number of output of pNtk1 is " << Abc_NtkPoNum(pNtk1) << endl;
         cout << "the number of output is not 1, but " << Abc_NtkPoNum(pNtkMiter)
              << " instead. Miter creation is NOT successful!" << endl;
+    }
+    // TODO: to check things like pCopy
+}
+
+void assignPIIDs( Cnf_Dat_t * miterCnfData, int * OriPIIDs, int * MUXPIIDs, int OriPINum, int MUXPINum, bool print ) {
+    int i;
+    for ( i = 0; i < OriPINum; ++i )
+        OriPIIDs[i] = -1;
+    for ( i = 0; i < MUXPINum; ++i )
+        MUXPIIDs[i] = -1;
+    for ( i = 0; i < OriPINum; ++i )
+        OriPIIDs[i] = miterCnfData->nVars - OriPINum - MUXPINum - 1 + i;
+    for ( i = 0; i < MUXPINum; ++i )
+        MUXPIIDs[i] = miterCnfData->nVars - MUXPINum - 1 + i;
+    // check the IDs
+    if ( print )
+    {
+        for (i = 0; i < OriPINum; ++i)
+            cout << "the i th OriPI's ID of pMiter is " << OriPIIDs[i] << endl;
+        for (i = 0; i < MUXPINum; ++i)
+            cout << "the i th MUXPI's ID of pMiter is " << MUXPIIDs[i] << endl;
     }
 }
