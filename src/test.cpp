@@ -1,7 +1,5 @@
 
 // Created by 娄辰飞 on 2021/3/9.
-
-
 #include "headers.h"
 #include "cmdline.h"
 #include "sasimi.h"
@@ -62,15 +60,15 @@ int main(int argc, char * argv[])
 
     int size = Abc_NtkPoNum( pNtkLogic );
     int threshold[size];
+    // assign the threshold
     for ( int i = 0; i < size; ++i )
         threshold[i] = 0;
     threshold[size/3] = 1;
+    // create two dynamically allocated arrays. Use double pointer here because reallocation may change the address.
     sasimiMng.SATBasedMultiSelection( pNtkLogic, outPrefix.string(), threshold );
 
     // stop abc
     Abc_Stop();
-
-
 
     return 0;
 }

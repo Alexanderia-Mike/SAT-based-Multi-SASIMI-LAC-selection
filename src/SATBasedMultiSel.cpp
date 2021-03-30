@@ -3,6 +3,7 @@
 //
 
 #include "sasimi.h"
+#include "cnf2Depqbf.h"
 
 
 // transfer all the fanouts of <pNodeFrom> to <pNodeTo>
@@ -44,7 +45,7 @@ using namespace std::filesystem;
 void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::string outPrefix, int threshold[] )
 {
     // init
-    string cnfPrefix = "AppTestOutput/MUXedCnf";
+    char * cnfFileName = "intermediate-results/MiterCNF.cnf";
     Abc_Ntk_t * pAppNtk = Abc_NtkDup(pOriNtk);
     PatchConst(pOriNtk); // add 0s and 1s to the original circuit
     PatchConst(pAppNtk); // add 0s and 1s to the approximate circuit
@@ -81,18 +82,29 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
     SortCandLACs(nodeLACs, pAppSmlt->GetFrameNum(), candLACs);
 
     // generate CNF expression according to the muxed network
-    CreateMuxedCNF( pAppNtk, candLACs, cnfPrefix, threshold );
+    int ** OriPIIDs = new int *, ** MUXPIIDs = new int *;
+    * OriPIIDs = (int *) malloc( 0 ); * MUXPIIDs = (int *) malloc( 0 );
 
-    // not consider them yet
-//    // solve the CNF using SAT and return the rersult thorugh <res>
-//    int res = SatSolveApply(cnfPrefix, outPrefix);
-//    if (!res)
-//        cout << "no available LAC exists" << endl;
-//    cout << "time = " << clock() - st << " us" << endl;
+    CreateMuxedCNF( pAppNtk, candLACs, cnfFileName, threshold, OriPIIDs, MUXPIIDs );
+
+    //for (int i = 0; i < 5; ++i)
+    //    cout << "the i th OriPI's ID of pMiter is " << (* OriPIIDs)[i] << endl;
+    //for (int i = 0; i < 5; ++i)
+    //    cout << "the i th MUXPI's ID of pMiter is " << (* MUXPIIDs)[i] << endl;
+
+    // call library depqbf
+    QDPLL *depqbf = qdpll_create ();
+    Cnf_DataFile2Depqbf( cnfFileName, depqbf );
+
+    // TODO: analyze the result returned by depqbf's SAT solver and generate the approximate circuit, which should
+    //  then be stored into a new blif file
+
+    delete [] * OriPIIDs;   delete OriPIIDs;
+    delete [] * MUXPIIDs;   delete MUXPIIDs;
 }
 
 // add muxes to all the nodes with LAC candidates
-void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector <LAC_t> & candLACs, IN std::string cnfPrefix, int threshold[] )
+void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector <LAC_t> & candLACs, IN char * cnfFileName, int threshold[], int ** OriPIIDs, int ** MUXPIIDs )
 {
     Abc_Ntk_t * pOriNtk = Abc_NtkDup( pMUXedNtk );
     AddMuxes( pMUXedNtk, candLACs );      // done
@@ -121,12 +133,14 @@ void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector
 
     // get PI's IDs
     int OriPINum = Abc_NtkPiNum( pNtkOriStrash ), MUXPINum = Abc_NtkPiNum( pMiter ) - OriPINum;
-    int OriPIIDs[OriPINum], MUXPIIDs[MUXPINum];
-    assignPIIDs( miterCnfData, OriPIIDs, MUXPIIDs, OriPINum, MUXPINum, false );
+//    int OriPIIDs[OriPINum], MUXPIIDs[MUXPINum];
+    * OriPIIDs = (int *) realloc( * OriPIIDs, OriPINum * sizeof( int ) );
+    * MUXPIIDs = (int *) realloc( * MUXPIIDs, MUXPINum * sizeof( int ) );
+    assignPIIDs( miterCnfData, * OriPIIDs, * MUXPIIDs, OriPINum, MUXPINum, false );
 
     // write the cnf into the file
     char * cnfFileName = "intermediate-results/MiterCNF.cnf";
-    Cnf_DataWriteIntoFile( miterCnfData, cnfFileName, 0, NULL, NULL );  // since fReadable=0, all the variables are added by 1.
+    Cnf_DataWriteIntoFile( miterCnfData, (char *) cnfFileName, 0, NULL, NULL );  // since fReadable=0, all the variables are added by 1.
 
     // debug
 //    Abc_Obj_t * pObj; int i; Aig_Obj_t * paObj;

@@ -88,7 +88,7 @@ public:
      *      <nodeLACs>, create the CNF encoding of the Muxed network and store
      *      the result in the file <cnfPrefix>.cnf
      */
-    void CreateMuxedCNF( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & nodeLACs, IN std::string cnfPrefix, int threshold[] );
+    void CreateMuxedCNF( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & nodeLACs, IN char * cnfFileName, int threshold[], int ** OriPIIDs, int ** MUXPIIDs );
 
     /** SatSolveApply ****************************************************************
      * 
