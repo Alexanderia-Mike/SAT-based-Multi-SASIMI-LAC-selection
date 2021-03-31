@@ -36,6 +36,8 @@ static Abc_Obj_t ** ConstNodes ( Abc_Ntk_t * pNtk, int threshold[], int size );
 // to check that everything is Okay with the created Miter
 static void MiterCheck ( Abc_Ntk_t * pNtkMiter, Abc_Ntk_t * pNtk1 );
 // to extract the IDs of original PIs and MUX PIs in cnf and store them in <OriPIIDs> and <MUXPIIDs>, respectively
+//      Note that <OriPIIDs[0]> stores the number of OriPIs, and the <OriPIIDs[1~OriPINum]> stores the data for indices.
+//      The same for <MUXPIIDs[]>
 void assignPIIDs( Cnf_Dat_t * miterCnfData, int * OriPIIDs, int * MUXPIIDs, int OriPINum, int MUXPINum, bool print );
 
 
@@ -82,10 +84,10 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
     SortCandLACs(nodeLACs, pAppSmlt->GetFrameNum(), candLACs);
 
     // generate CNF expression according to the muxed network
-    int ** OriPIIDs = new int *, ** MUXPIIDs = new int *;
-    * OriPIIDs = (int *) malloc( 0 ); * MUXPIIDs = (int *) malloc( 0 );
+    int ** pOriPIIDs = new int *, ** pMUXPIIDs = new int *;
+    * pOriPIIDs = (int *) malloc( 0 ); * pMUXPIIDs = (int *) malloc( 0 );
 
-    CreateMuxedCNF( pAppNtk, candLACs, cnfFileName, threshold, OriPIIDs, MUXPIIDs );
+    CreateMuxedCNF( pAppNtk, candLACs, cnfFileName, threshold, pOriPIIDs, pMUXPIIDs );
 
     //for (int i = 0; i < 5; ++i)
     //    cout << "the i th OriPI's ID of pMiter is " << (* OriPIIDs)[i] << endl;
@@ -94,17 +96,20 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
 
     // call library depqbf
     QDPLL *depqbf = qdpll_create ();
-    Cnf_DataFile2Depqbf( cnfFileName, depqbf );
+    Cnf_DataFile2Depqbf( cnfFileName, depqbf, * pOriPIIDs, * pMUXPIIDs );
 
     // TODO: analyze the result returned by depqbf's SAT solver and generate the approximate circuit, which should
     //  then be stored into a new blif file
 
-    delete [] * OriPIIDs;   delete OriPIIDs;
-    delete [] * MUXPIIDs;   delete MUXPIIDs;
+    // free the dynamically allocated memory
+    delete [] * pOriPIIDs;   delete pOriPIIDs;
+    delete [] * pMUXPIIDs;   delete pMUXPIIDs;
+    /* Delete solver instance. */
+    qdpll_delete ( depqbf );
 }
 
 // add muxes to all the nodes with LAC candidates
-void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector <LAC_t> & candLACs, IN char * cnfFileName, int threshold[], int ** OriPIIDs, int ** MUXPIIDs )
+void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector <LAC_t> & candLACs, IN char * cnfFileName, int threshold[], int ** pOriPIIDs, int ** pMUXPIIDs )
 {
     Abc_Ntk_t * pOriNtk = Abc_NtkDup( pMUXedNtk );
     AddMuxes( pMUXedNtk, candLACs );      // done
@@ -134,12 +139,12 @@ void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector
     // get PI's IDs
     int OriPINum = Abc_NtkPiNum( pNtkOriStrash ), MUXPINum = Abc_NtkPiNum( pMiter ) - OriPINum;
 //    int OriPIIDs[OriPINum], MUXPIIDs[MUXPINum];
-    * OriPIIDs = (int *) realloc( * OriPIIDs, OriPINum * sizeof( int ) );
-    * MUXPIIDs = (int *) realloc( * MUXPIIDs, MUXPINum * sizeof( int ) );
-    assignPIIDs( miterCnfData, * OriPIIDs, * MUXPIIDs, OriPINum, MUXPINum, false );
+    * pOriPIIDs = (int *) realloc( * pOriPIIDs, ( OriPINum + 1 ) * sizeof( int ) );
+    * pMUXPIIDs = (int *) realloc( * pMUXPIIDs, ( MUXPINum + 1 ) * sizeof( int ) );
+    assignPIIDs( miterCnfData, * pOriPIIDs, * pMUXPIIDs, OriPINum, MUXPINum, false );
 
     // write the cnf into the file
-    char * cnfFileName = "intermediate-results/MiterCNF.cnf";
+//    char * cnfFileName = "intermediate-results/MiterCNF.cnf";
     Cnf_DataWriteIntoFile( miterCnfData, (char *) cnfFileName, 0, NULL, NULL );  // since fReadable=0, all the variables are added by 1.
 
     // debug
@@ -462,20 +467,21 @@ static void MiterCheck ( Abc_Ntk_t * pNtkMiter, Abc_Ntk_t * pNtk1 ) {
 
 void assignPIIDs( Cnf_Dat_t * miterCnfData, int * OriPIIDs, int * MUXPIIDs, int OriPINum, int MUXPINum, bool print ) {
     int i;
-    for ( i = 0; i < OriPINum; ++i )
+    for ( i = 0; i < OriPINum + 1; ++i )
         OriPIIDs[i] = -1;
-    for ( i = 0; i < MUXPINum; ++i )
+    for ( i = 0; i < MUXPINum + 1; ++i )
         MUXPIIDs[i] = -1;
+    OriPIIDs[0] = OriPINum; MUXPIIDs[0] = MUXPINum;
     for ( i = 0; i < OriPINum; ++i )
-        OriPIIDs[i] = miterCnfData->nVars - OriPINum - MUXPINum - 1 + i;
+        OriPIIDs[i + 1] = miterCnfData->nVars - OriPINum - MUXPINum - 1 + i;
     for ( i = 0; i < MUXPINum; ++i )
-        MUXPIIDs[i] = miterCnfData->nVars - MUXPINum - 1 + i;
+        MUXPIIDs[i + 1] = miterCnfData->nVars - MUXPINum - 1 + i;
     // check the IDs
     if ( print )
     {
-        for (i = 0; i < OriPINum; ++i)
+        for (i = 0; i < OriPINum + 1; ++i)
             cout << "the i th OriPI's ID of pMiter is " << OriPIIDs[i] << endl;
-        for (i = 0; i < MUXPINum; ++i)
+        for (i = 0; i < MUXPINum + 1; ++i)
             cout << "the i th MUXPI's ID of pMiter is " << MUXPIIDs[i] << endl;
     }
 }
