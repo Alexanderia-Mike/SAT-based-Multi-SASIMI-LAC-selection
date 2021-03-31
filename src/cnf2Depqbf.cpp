@@ -19,8 +19,10 @@ void Cnf_DataFile2Depqbf( char * pFileName, QDPLL * depqbf, int * OriPIIDs, int 
 {
     Vec_Int_t * vClas = NULL;   // vector of clauses
     Vec_Int_t * vLits = NULL;   // vector of literals
-    char * pBuffer; int Entry, i;
+    char * pBuffer;
+    int Entry, i;
     FILE * pFile = fopen( pFileName, "rb" );
+
     // read cnf information from <pFileName>
     if ( !Cnf_DataFromFile( pFileName, vClas, vLits, pBuffer, pFile ) )
         goto finish;
@@ -37,18 +39,30 @@ void Cnf_DataFile2Depqbf( char * pFileName, QDPLL * depqbf, int * OriPIIDs, int 
     }
     // print
     qdpll_print (depqbf, stdout);
-    // solve the SAT problem
-    QDPLLResult res = qdpll_sat (depqbf);
-    if ( res == QDPLL_RESULT_SAT )
-        std::cout << "SAT! There exists a possible LAC!" << std::endl;
-    else if ( res == QDPLL_RESULT_UNSAT )
-        std::cout << "UNSAT! No possible LAC exists!" << std::endl;
-    else
-        std::cout << "UNKNOWN! Cannot figure out whether there exists a LAC!" << std::endl;
 
     // close the file and free the memory
     finish:
     Cnf_FinishReadingFile( pFile, vClas, vLits, pBuffer );
+}
+
+// solve the sat problem stored in <depqbf> and if SAT, return the assignment of variables in the file named <pFileName>
+bool QDPLL_SolveSatWriteAssignments( QDPLL * depqbf, char * pFileName )
+{
+    FILE * pOut;
+    // solve the SAT problem
+    QDPLLResult res = qdpll_sat (depqbf);
+    if ( res == QDPLL_RESULT_UNKNOWN )
+        std::cout << "UNKNOWN! Cannot figure out whether there exists a LAC!" << std::endl;
+    else
+    {
+        pOut = fopen( pFileName, "w+" );
+        qdpll_print ( depqbf, pOut );
+        fclose( pOut );
+        if ( res == QDPLL_RESULT_SAT )
+            std::cout << "SAT! There exists a possible LAC!" << std::endl;
+        else
+            std::cout << "UNSAT! No possible LAC exists!" << std::endl;
+    }
 }
 
 
@@ -56,15 +70,15 @@ void Cnf_DataFile2Depqbf( char * pFileName, QDPLL * depqbf, int * OriPIIDs, int 
 
 static void QDPLL_AddQuantifiers( QDPLL * depqbf, int * OriPIIDs, int * MUXPIIDs )
 {
-    // add universal quantifiers to depqbf
-    qdpll_new_scope_at_nesting (depqbf, QDPLL_QTYPE_FORALL, 1);
-    for ( int i = 0; i < OriPIIDs[0]; ++i )
-        qdpll_add( depqbf, OriPIIDs[i+1] );
-    qdpll_add( depqbf, 0 );
     // add existential quantifiers to depqbf
     qdpll_new_scope_at_nesting (depqbf, QDPLL_QTYPE_EXISTS, 1);
     for ( int i = 0; i < MUXPIIDs[0]; ++i )
         qdpll_add( depqbf, MUXPIIDs[i+1] );
+    qdpll_add( depqbf, 0 );
+    // add universal quantifiers to depqbf
+    qdpll_new_scope_at_nesting (depqbf, QDPLL_QTYPE_FORALL, 2);
+    for ( int i = 0; i < OriPIIDs[0]; ++i )
+        qdpll_add( depqbf, OriPIIDs[i+1] );
     qdpll_add( depqbf, 0 );
 }
 

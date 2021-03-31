@@ -48,6 +48,7 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
 {
     // init
     char * cnfFileName = "intermediate-results/MiterCNF.cnf";
+    char * SATResultFileName = "intermediate-results/SATResult.qdimacs";
     Abc_Ntk_t * pAppNtk = Abc_NtkDup(pOriNtk);
     PatchConst(pOriNtk); // add 0s and 1s to the original circuit
     PatchConst(pAppNtk); // add 0s and 1s to the approximate circuit
@@ -97,9 +98,10 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
     // call library depqbf
     QDPLL *depqbf = qdpll_create ();
     Cnf_DataFile2Depqbf( cnfFileName, depqbf, * pOriPIIDs, * pMUXPIIDs );
+    // solve the sat and store the results into the file <SATResultFileName>.
+    QDPLL_SolveSatWriteAssignments( depqbf, SATResultFileName );
 
-    // TODO: analyze the result returned by depqbf's SAT solver and generate the approximate circuit, which should
-    //  then be stored into a new blif file
+    // TODO: generate the resulting approximate network and store it into a new blif file
 
     // free the dynamically allocated memory
     delete [] * pOriPIIDs;   delete pOriPIIDs;

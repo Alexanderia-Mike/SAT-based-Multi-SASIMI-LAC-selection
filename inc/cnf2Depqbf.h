@@ -7,3 +7,7 @@
 
 // read the cnf from a "cnf" file, then store the data in <depqbf>
 extern void Cnf_DataFile2Depqbf( IN char * pFileName, OUT QDPLL * depqbf, int * OriPIIDs, int * MUXPIIDs );
+
+// solve the sat problem stored in <depqbf> and if SAT, return the assignment of variables in the file named <pFileName>
+//  Require: depqbf should not be empty.
+extern bool QDPLL_SolveSatWriteAssignments( IN QDPLL * depqbf, OUT char * pFileName );
