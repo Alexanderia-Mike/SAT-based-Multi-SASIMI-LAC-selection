@@ -24,7 +24,7 @@ static void printFirstXPData( Abc_Ntk_t * pNtk, int printNum );
 //      The output is also in unsigned form. the integer <n> represents the bit size of <X> and <Y>.
 // REQUIRE: <X> and <Y> are vectors of Abc_Obj * that belogns to the network <pNtk>
 static Abc_Obj_t ** X_subtract_Y_abs(Abc_Ntk_t * pNtk, Abc_Obj_t * X[], Abc_Obj_t * Y[], int n);
-// build a comparator that compares <X> and <Y>. output a single object that values 1 if <X> > <Y> and
+// build a comparator that compares <X> and <Y>. output a single object that values 1 if <X> < <Y> and
 //      0 otherwise. the integer <n> represents the bit size of <X> and <Y>.
 // REQUIRE: <X> and <Y> should belong to <pNtk>
 static Abc_Obj_t * X_lt_Y(Abc_Ntk_t * pNtk, Abc_Obj_t * X[], Abc_Obj_t * Y[], int n);
@@ -39,6 +39,8 @@ static void MiterCheck ( Abc_Ntk_t * pNtkMiter, Abc_Ntk_t * pNtk1 );
 //      Note that <OriPIIDs[0]> stores the number of OriPIs, and the <OriPIIDs[1~OriPINum]> stores the data for indices.
 //      The same for <MUXPIIDs[]>
 void assignPIIDs( Cnf_Dat_t * miterCnfData, int * OriPIIDs, int * MUXPIIDs, int OriPINum, int MUXPINum, bool print );
+// return true if all the nodes in <pNtk> have level=0
+static bool AllLevelZero( Abc_Ntk_t * pNtk, bool print );
 
 
 using namespace std;
@@ -76,6 +78,10 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
     pAppSmlt->Simulate();
     GetCPMOneCut(oriSmlt, *pAppSmlt, bds);
     CollectMFFC(*pAppSmlt, vMffcs);     // collect the Mffcs of the approximate simulator
+    if ( AllLevelZero( pOriNtk, true ) )
+        cout << "all the objects have level 0!" << endl;
+    // TODO: why are <level> parameters of all nodes 0?
+
     if (metricType == Metric_t::ER)     // get the LACs
         CollectAllLACsUnderER(oriSmlt, *pAppSmlt, bds, vMffcs, nodeLACs);
     else
@@ -83,6 +89,7 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
     FreeMFFC(vMffcs);                   // free the memory
     // sort the LACs according to their scores
     SortCandLACs(nodeLACs, pAppSmlt->GetFrameNum(), candLACs);
+    cout << "the number of candidate LACs is " << candLACs.size() << endl;
 
     // generate CNF expression according to the muxed network
     int ** pOriPIIDs = new int *, ** pMUXPIIDs = new int *;
@@ -97,11 +104,17 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
 
     // call library depqbf
     QDPLL *depqbf = qdpll_create ();
+    qdpll_configure (depqbf, "--dep-man=simple");
+    qdpll_configure (depqbf, "--incremental-use");
+
     Cnf_DataFile2Depqbf( cnfFileName, depqbf, * pOriPIIDs, * pMUXPIIDs );
     // solve the sat and store the results into the file <SATResultFileName>.
-    QDPLL_SolveSatWriteAssignments( depqbf, SATResultFileName );
+    // qdpll_reset( depqbf );
+    QDPLLResult res = QDPLL_SolveSatWriteAssignments( depqbf, SATResultFileName );
 
     // TODO: generate the resulting approximate network and store it into a new blif file
+
+    // TODO: evaluate the area saved by this approximate local change.
 
     // free the dynamically allocated memory
     delete [] * pOriPIIDs;   delete pOriPIIDs;
@@ -128,7 +141,8 @@ void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector
     Abc_Ntk_t * pMiter = CreateMiterXorMulti ( pNtkMUXedStrash, pNtkOriStrash, threshold);
     assert( Abc_NtkPiNum( pMiter ) == Abc_NtkPiNum( pMUXedNtk ) );
 
-    cout << "miter is created successfully!" << endl;
+    cout << "miter is created successfully!" << endl << "the number of PI in original network is " <<
+        Abc_NtkPiNum( pOriNtk ) << endl << "the number of PI in miter is " << Abc_NtkPiNum( pMiter ) << endl;
     Ckt_WriteBlif( pMiter, "intermediate-results/Alexanderia_Miter.blif" );
 
     // transform the network to cnf
@@ -136,6 +150,24 @@ void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector
     Io_Write(pMiter, aigFileName, IO_FILE_AIGER );  // the index of PIs are indexed from 1 to <NumCIs>. Temporarily stored in <pObj->pCopy>. See lines 699 ~ 704 in "src/base/io/ioWriteAiger.c" for more details
     Aig_Man_t * miterAigMan = Ioa_ReadAiger( aigFileName, 1 );  //
     Aig_ManPrintStats( miterAigMan );
+
+    /*
+    // debug begin
+    int i, nOutputs = 0; Aig_Obj_t * pObj;
+    Aig_ManForEachCo( miterAigMan, pObj, i )
+    {
+        cout << "the type of CO is "; Aig_ObjPrint( miterAigMan, pObj ); cout << ", and its ID is " << Aig_ObjId( pObj ) << endl;
+        if ( i < Aig_ManCoNum( miterAigMan ) - nOutputs )
+        {
+            Aig_Obj_t * pFinalAnd = Aig_ObjFanin0( pObj );
+            cout << "the fanin of CO (final and) is "; Aig_ObjPrint( miterAigMan, pFinalAnd ); cout << " and is " << ( Aig_ObjFaninC0(pObj) ? "complemented!" : "not complemented" ) << endl; 
+            cout << "the first fanin of final and is "; Aig_ObjPrint( miterAigMan, Aig_ObjFanin0( pFinalAnd ) ); cout << " and is " << ( Aig_ObjFaninC0(pFinalAnd) ? "complemented!" : "not complemented" ) << endl; 
+            cout << "the second fanin of final and is "; Aig_ObjPrint( miterAigMan, Aig_ObjFanin1( pFinalAnd ) ); cout << " and is " << ( Aig_ObjFaninC1(pFinalAnd) ? "complemented!" : "not complemented" ) << endl; 
+        }
+    }
+    // debug end
+    */
+
     Cnf_Dat_t * miterCnfData = Cnf_DeriveSimple( miterAigMan, 0 );  // the variable index in cnf is derived from iterating all COs, Internal nodes, CIs in the aig manager. For more details, see lines 624 ~ 630 in "src/sat/cnf/cnfWrite.c"
 
     // get PI's IDs
@@ -143,11 +175,11 @@ void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector
 //    int OriPIIDs[OriPINum], MUXPIIDs[MUXPINum];
     * pOriPIIDs = (int *) realloc( * pOriPIIDs, ( OriPINum + 1 ) * sizeof( int ) );
     * pMUXPIIDs = (int *) realloc( * pMUXPIIDs, ( MUXPINum + 1 ) * sizeof( int ) );
-    assignPIIDs( miterCnfData, * pOriPIIDs, * pMUXPIIDs, OriPINum, MUXPINum, false );
+    assignPIIDs( miterCnfData, * pOriPIIDs, * pMUXPIIDs, OriPINum, MUXPINum, true );
 
     // write the cnf into the file
 //    char * cnfFileName = "intermediate-results/MiterCNF.cnf";
-    Cnf_DataWriteIntoFile( miterCnfData, (char *) cnfFileName, 0, NULL, NULL );  // since fReadable=0, all the variables are added by 1.
+    Cnf_DataWriteIntoFile( miterCnfData, (char *) cnfFileName, 1, NULL, NULL );  // since fReadable=1, all the variables can be read by file without any trouble.
 
     // debug
 //    Abc_Obj_t * pObj; int i; Aig_Obj_t * paObj;
@@ -172,7 +204,7 @@ void AddMuxes ( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & candLACs ) {
         continue_flag = false;
         Abc_ObjForEachFanout( candLAC.GetTS(), pObj, i )
             if ( pObj->Id == candLAC.GetSS()->Id )
-                { continue_flag = true;   break; }
+                { std::cout << "shit!" << std::endl;    continue_flag = true;   break; }
         if ( continue_flag )    continue;
         Abc_Obj_t * selection = Abc_NtkCreatePi(pOriNtk);
         Abc_Obj_t * pMux = Abc_NtkCreateNodeMux( pOriNtk, selection, candLAC.GetSS(), candLAC.GetTS() );
@@ -194,6 +226,7 @@ void AddMuxes ( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & candLACs ) {
 //        if ( count >= 1 )
 //            break;
     }
+    // TODO: to add a conditional block telling whether the node SS needs to be complemented.
 }
 
 void Abc_ObjTransferFanoutsExceptMux ( IN Abc_Obj_t * pNodeFrom, IN Abc_Obj_t * pNodeTo, IN Abc_Obj_t * pMux )
@@ -319,8 +352,8 @@ static Abc_Ntk_t * CreateMiterXorMulti ( Abc_Ntk_t * pNtk1, Abc_Ntk_t * pNtk2, i
     Abc_NtkForEachLatch( pNtk2, pNode, i )
         Abc_ObjAddFanin( Abc_ObjFanin0(pNode)->pCopy, Abc_ObjChild0Copy(Abc_ObjFanin0(pNode)) );
     // build the output vectors of two networks
-    Abc_Obj_t ** X = new Abc_Obj_t *[vPairs->nSize / 2];
-    Abc_Obj_t ** Y = new Abc_Obj_t *[vPairs->nSize / 2];
+    Abc_Obj_t ** X = new Abc_Obj_t *[vPairs->nSize / 2];    // MUXed
+    Abc_Obj_t ** Y = new Abc_Obj_t *[vPairs->nSize / 2];    // original
     for(i = 0; i < vPairs->nSize; i += 2)
     {
         X[i / 2] = (Abc_Obj_t *) vPairs->pArray[i];
@@ -328,11 +361,12 @@ static Abc_Ntk_t * CreateMiterXorMulti ( Abc_Ntk_t * pNtk1, Abc_Ntk_t * pNtk2, i
     }
     // calculate the weighted difference of the outputs from two networks
     Abc_Obj_t ** Diff = X_subtract_Y_abs(pNtkMiter, X, Y, vPairs->nSize / 2);
-    delete[] X, Y;
+    delete[] X;
+    delete[] Y;
     // builds the comparator
     int size = Abc_NtkPoNum( pNtk1 );
     Abc_Obj_t ** thresholdNodes = ConstNodes( pNtkMiter, threshold, size );
-    Abc_Obj_t * compareRes = X_lt_Y( pNtkMiter, thresholdNodes, Diff, size );
+    Abc_Obj_t * compareRes = X_lt_Y( pNtkMiter, Diff, thresholdNodes,  size );
     // create the final output
     Abc_Obj_t * result = Abc_NtkCreatePo( pNtkMiter );
     Abc_ObjAddFanin( result, compareRes );
@@ -481,9 +515,37 @@ void assignPIIDs( Cnf_Dat_t * miterCnfData, int * OriPIIDs, int * MUXPIIDs, int 
     // check the IDs
     if ( print )
     {
-        for (i = 0; i < OriPINum + 1; ++i)
+        cout << "the length of OriPIIDs is " << OriPIIDs[0] << endl;
+        for (i = 1; i < OriPINum + 1; ++i)
             cout << "the i th OriPI's ID of pMiter is " << OriPIIDs[i] << endl;
-        for (i = 0; i < MUXPINum + 1; ++i)
+        cout << "the length of MUXPIIDs is " << MUXPIIDs[0] << endl;
+        for (i = 1; i < MUXPINum + 1; ++i)
             cout << "the i th MUXPI's ID of pMiter is " << MUXPIIDs[i] << endl;
     }
 }
+
+static bool AllLevelZero( Abc_Ntk_t * pNtk, bool print ) {
+    Abc_Obj_t * pObj;
+    int i;
+    string types[] = {
+            "ABC_OBJ_NONE",   //  0:  unknown
+            "ABC_OBJ_CONST1",     //  1:  constant 1 node (AIG only)
+            "ABC_OBJ_PI",         //  2:  primary input terminal
+            "ABC_OBJ_PO",         //  3:  primary output terminal
+            "ABC_OBJ_BI",         //  4:  box input terminal
+            "ABC_OBJ_BO",         //  5:  box output terminal
+            "ABC_OBJ_NET",        //  6:  net
+            "ABC_OBJ_NODE",       //  7:  node
+            "ABC_OBJ_LATCH",      //  8:  latch
+            "ABC_OBJ_WHITEBOX",   //  9:  box with known contents
+            "ABC_OBJ_BLACKBOX",   // 10:  box with unknown contents
+            "ABC_OBJ_NUMBER"};
+    if ( print )
+        Abc_NtkForEachObj( pNtk, pObj, i )
+            cout << "type: " << types[pObj->Type] << "; Level: " << Abc_ObjLevel( pObj ) << "; name: " << Abc_ObjName( pObj ) << endl;
+    Abc_NtkForEachObj( pNtk, pObj, i )
+        if ( Abc_ObjLevel( pObj ) != 0 )
+            return false;
+    return true;
+}
+

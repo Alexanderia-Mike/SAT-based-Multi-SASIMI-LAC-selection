@@ -33,11 +33,10 @@
 #include <sat/bsat/satStore.h>
 #include <sat/cnf/cnf.h>
 
-
-
-
 extern "C" {
+
     void Abc_NtkDfsReverse_rec(Abc_Obj_t * pNode, Vec_Ptr_t * vNodes);
+
 }
 
 

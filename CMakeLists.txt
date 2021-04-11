@@ -21,6 +21,8 @@ SET(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "/opt/homebrew/opt/icu4c/sbin")
 # Add link directories
 link_directories(${PROJECT_SOURCE_DIR}/abc)
 link_directories(${PROJECT_SOURCE_DIR}/depqbf)
+link_directories(${PROJECT_SOURCE_DIR}/depqbf/nenofex)
+link_directories(${PROJECT_SOURCE_DIR}/depqbf/picosat)
 
 # Add definitions
 add_definitions(-DLIN64 -g -Wall -O3 -std=c++17)
@@ -34,15 +36,15 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 # Add an executable with the above sources
 #add_executable(sasimi-vecbee ${sources} depqbf/examples/basic-clause-groups-api-example-assumptions.cpp)
 add_executable(sasimi-vecbee src/test.cpp ${sources})
-add_executable(depqbfEx depqbf/examples/basic-clause-groups-api-example-assumptions.cpp)
+#add_executable(depqbfEx depqbf/examples/basic-clause-groups-api-example-assumptions.c)
 
 # link libraries, with -lrt, which seems not working on Mac
 # target_link_libraries(sasimi-vecbee -labc -lm -ldl -rdynamic -lreadline -ltermcap -lpthread -lstdc++ -lrt -lstdc++fs)
 # link libraries, without -lrt, cannot work because -lstdc++fs not working
 # target_link_libraries(sasimi-vecbee -labc -lm -ldl -rdynamic -lreadline -ltermcap -lpthread -lstdc++ -lstdc++fs)
 # get rid of -lrt and -lstdc++fs !
-target_link_libraries(sasimi-vecbee -labc -lqdpll -lm -ldl -rdynamic -lreadline -ltermcap -lpthread -lstdc++)
-target_link_libraries(depqbfEx libqdpll.a -lm -ldl -rdynamic -lreadline -ltermcap -lpthread -lstdc++)
+target_link_libraries(sasimi-vecbee -labc libqdpll.a libnenofex.a libpicosat.a -lm -ldl -rdynamic -lreadline -ltermcap -lpthread -lstdc++)
+#target_link_libraries(depqbfEx libqdpll.a -lm -ldl -rdynamic -lreadline -ltermcap -lpthread -lstdc++)
 
 
 

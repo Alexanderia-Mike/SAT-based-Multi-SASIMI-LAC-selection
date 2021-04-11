@@ -3,15 +3,11 @@
 .outputs    j k
 .names  c e
 0 1
-.names  c f
-0 1
 .names  b e g
-11 1
-.names  b f h
 11 1
 .names  a g j
 11 1
-.names  h i
+.names  g i
 0 1
 .names  i d k
 11 1

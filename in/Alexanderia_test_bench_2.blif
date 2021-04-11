@@ -1,0 +1,31 @@
+.model  test_bench_2
+.inputs     a b c
+.outputs    o1 o2
+
+# level 1
+.names  a INV_a
+0 1
+.names	c INV_c
+0 1
+
+# level 2
+.names	INV_a b INV_c AND_1
+111 1
+.names	a c AND_2
+11 1
+.names	INV_a INV_c AND_3
+11 1
+
+# level 3
+.names	AND_1 AND_2 OR1
+00 0
+.names	AND_1 AND_3 OR2
+00 0
+
+# output buffer
+.names	OR1 o1
+1 1
+.names	OR2 o2
+1 1
+
+.end

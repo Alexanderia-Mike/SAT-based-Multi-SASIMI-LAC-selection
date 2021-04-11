@@ -60,6 +60,9 @@
         "cinttypes": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "aig.h": "c",
+        "vec.h": "c",
+        "vecint.h": "c"
     }
 }

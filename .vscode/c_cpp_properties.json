@@ -6,7 +6,7 @@
       {
         "name": "Linux",
         "intelliSenseMode": "${default}",
-        "includePath": ["${workspaceFolder}/inc", "${workspaceFolder}/abc/src", "/usr/include"],
+        "includePath": ["${workspaceFolder}/inc", "${workspaceFolder}/abc/src", "/usr/include", "${workspaceFolder}/depqbf"],
         // "macFrameworkPath": ["/System/Library/Frameworks"],
         "defines": ["FOO", "BAR=100"],
         // "forcedInclude": ["${workspaceFolder}/include/config.h"],

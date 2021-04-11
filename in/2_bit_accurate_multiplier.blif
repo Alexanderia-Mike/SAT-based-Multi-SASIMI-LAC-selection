@@ -1,0 +1,33 @@
+.model  2_multiplier
+.inputs     a1 a0 b1 b0
+.outputs    out3 out2 out1 out0
+
+# zeroth level
+.names  c00 out0
+1 1
+
+# first level
+.names  a1 b1 c11
+11 1
+.names  a1 b0 c10
+11 1
+.names  a0 b1 c01
+11 1
+.names  a0 b0 c00
+11 1
+
+# second level
+.names  c10 c01 d1
+11 1
+.names  c10 c01 out1
+01 1
+10 1
+
+# third level
+.names  c11 d1 out3
+11 1
+.names  c11 d1 out2
+01 1
+10 1
+
+.end
