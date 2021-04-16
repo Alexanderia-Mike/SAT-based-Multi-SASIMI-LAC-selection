@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="sasimi-vecbee"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\..\;CMake Files\..\..\..\opt\;CMake Files\..\..\..\opt\homebrew\;CMake Files\..\..\..\opt\homebrew\lib\;CMake Files\..\..\..\opt\homebrew\lib\cmake\;CMake Files\..\..\..\opt\homebrew\lib\cmake\Boost-1.75.0\;CMake Files\..\..\..\opt\homebrew\lib\cmake\boost_headers-1.75.0\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="sasimi-vecbee">
+				<Option output="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/sasimi-vecbee" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DLIN64"/>
+					<Add option="-DHAS_BOOST"/>
+					<Add directory="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/abc/src"/>
+					<Add directory="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/inc"/>
+					<Add directory="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/depqbf"/>
+					<Add directory="/opt/homebrew/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/bin/../include/c++/v1"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/12.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 sasimi-vecbee"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="sasimi-vecbee/fast">
+				<Option output="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/sasimi-vecbee" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DLIN64"/>
+					<Add option="-DHAS_BOOST"/>
+					<Add directory="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/abc/src"/>
+					<Add directory="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/inc"/>
+					<Add directory="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/depqbf"/>
+					<Add directory="/opt/homebrew/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/bin/../include/c++/v1"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/12.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 sasimi-vecbee/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/src/SATBasedMultiSel.cpp">
+			<Option target="sasimi-vecbee"/>
+		</Unit>
+		<Unit filename="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/src/cktUtil.cc">
+			<Option target="sasimi-vecbee"/>
+		</Unit>
+		<Unit filename="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/src/cnf2Depqbf.cpp">
+			<Option target="sasimi-vecbee"/>
+		</Unit>
+		<Unit filename="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/src/main.cc">
+			<Option target="sasimi-vecbee"/>
+		</Unit>
+		<Unit filename="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/src/sasimi.cc">
+			<Option target="sasimi-vecbee"/>
+		</Unit>
+		<Unit filename="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/src/simulator.cc">
+			<Option target="sasimi-vecbee"/>
+		</Unit>
+		<Unit filename="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/src/strashtest.cpp">
+			<Option target="sasimi-vecbee"/>
+		</Unit>
+		<Unit filename="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/src/test.cpp">
+			<Option target="sasimi-vecbee"/>
+		</Unit>
+		<Unit filename="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/../../../opt/homebrew/lib/cmake/Boost-1.75.0/BoostConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\opt\homebrew\lib\cmake\Boost-1.75.0\"/>
+		</Unit>
+		<Unit filename="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/../../../opt/homebrew/lib/cmake/Boost-1.75.0/BoostConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\opt\homebrew\lib\cmake\Boost-1.75.0\"/>
+		</Unit>
+		<Unit filename="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/../../../opt/homebrew/lib/cmake/boost_headers-1.75.0/boost_headers-config-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\opt\homebrew\lib\cmake\boost_headers-1.75.0\"/>
+		</Unit>
+		<Unit filename="/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/../../../opt/homebrew/lib/cmake/boost_headers-1.75.0/boost_headers-config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\opt\homebrew\lib\cmake\boost_headers-1.75.0\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

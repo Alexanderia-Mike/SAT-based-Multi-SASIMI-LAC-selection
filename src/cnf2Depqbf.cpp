@@ -31,20 +31,25 @@ void Cnf_DataFile2Depqbf( char * pFileName, QDPLL * depqbf, int * OriPIIDs, int 
 
     if ( !ReadSuc ) goto finish;
 
+    /*
     // debug begin
     std::cout << "1. before anything: " << std::endl;
     qdpll_print (depqbf, stdout);
     std::cout << "the number of variables in cnf is " << nVars << std::endl;
     // debug end
+    */
 
     // create quantifiers
     QDPLL_AddQuantifiers( depqbf, OriPIIDs, MUXPIIDs, nVars );
 
+    /*
     // debug begin
     std::cout << "2. after adding quantifiers: " << std::endl;
     qdpll_print (depqbf, stdout);
     // debug end
+    */
     
+    /*
     // debug begin
     std::cout << "the values in vClas are listed as follows:" << std::endl;
     Vec_IntForEachEntry( vClas, Entry, i )
@@ -54,6 +59,7 @@ void Cnf_DataFile2Depqbf( char * pFileName, QDPLL * depqbf, int * OriPIIDs, int 
         std::cout << Entry << " ";
     std::cout << std::endl;
     // debug end
+    */
 
     /*
     // debug version begin
@@ -88,9 +94,11 @@ void Cnf_DataFile2Depqbf( char * pFileName, QDPLL * depqbf, int * OriPIIDs, int 
 
     }
 
+    /*
     // print
     std::cout << "3. after adding everything: " << std::endl;
     qdpll_print (depqbf, stdout);
+    */
 
     // close the file and free the memory
     finish:

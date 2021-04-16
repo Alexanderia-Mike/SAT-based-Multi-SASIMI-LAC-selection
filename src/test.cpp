@@ -17,7 +17,7 @@ parser Cmdline_Parser(int argc, char * argv[])
     option.add <string> ("output", 'o', "path to output circuit files", false, "appNtk/");
     option.add <string> ("library", 'l', "standard cell library", false, "data/library/mcnc.genlib");
     option.add <string> ("metricType", '\0', "error metric type, er, nmed", false, "er");
-    option.add <float>  ("errorBound", 'e', "error metric upper bound", false, 0.02, range(0.0, 1.0));
+    option.add <float>  ("errorBound", 'e', "error metric upper bound", false, 0.26, range(0.0, 1.0));
     option.add <int>    ("frameNumber", 'f', "simulation round", false, 100000, range(1, INT_MAX));
     option.add <int>    ("maxLevel", '\0', "max TFO cut level", false, INT_MAX, range(1, INT_MAX));
     option.parse_check(argc, argv);

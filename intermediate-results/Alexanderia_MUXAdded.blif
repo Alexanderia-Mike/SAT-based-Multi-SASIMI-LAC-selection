@@ -1,0 +1,17 @@
+# Benchmark "extremely_simple_testbench" written by ABC on Thu Apr 15 15:35:24 2021
+.model extremely_simple_testbench
+.inputs a b n9 n11
+.outputs o1 o2
+.names a new_n7_
+1 1
+.names a b new_n8_
+11 1
+.names new_n9_1_
+ 0
+.names n9 new_n9_1_ new_n8_ o2
+11- 1
+0-1 1
+.names n11 new_n8_ new_n7_ o1
+11- 1
+0-1 1
+.end

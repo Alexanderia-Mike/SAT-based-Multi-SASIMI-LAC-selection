@@ -1,0 +1,40 @@
+IDIR1 = inc
+IDIR2 = abc/src
+IDIR3 = depqbf
+LDIR1 = abc
+LDIR2 = depqbf/nenofex
+LDIR3 = depqbf/picosat
+LDIR4 = depqbf
+IDIR = $(IDIR1) $(IDIR2) $(IDIR3)
+LDIR = $(LDIR1) $(LDIR2) $(LDIR3) $(LDIR4)
+CC = g++ -v
+INCFLAGS = $(foreach d, $(IDIR), -I$d)
+DIRFLAGS = $(foreach d, $(LDIR), -L$d)
+DEF = -DLIN64 -g -Wall -O3 -std=c++17
+
+ODIR = src/obj
+SDIR = src
+# LDIR = ../lib
+
+LIBS=-labc -lqdpll -lnenofex -lpicosat -lm -ldl -rdynamic -lreadline -ltermcap -lpthread -lstdc++ -lrt -lstdc++fs
+
+_DEPS1 = abcApi.h cktBit.h cktUtil.h cmdline.h cnf2Depqbf.h debugAssert.h headers.h sasimi.h simulator.h
+DEPS = $(patsubst %,$(IDIR1)/%,$(_DEPS1))
+
+# _OBJ1 = cktUtil.o cnf2Depqbf.o main.o sasimi.o SATBasedMultiSel.o simulator.o strashtest.o test.o
+-oBJ1 = my-demo.o
+OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ1))
+
+
+# my-demo : $(OBJ)
+my-demo : $(ODIR)/my-demo.o
+	$(CC) $(DIRFLAGS) $(LIBS) -o $@ $^ $(INCFLAGS)
+
+# $(ODIR)/%.o : $(SDIR)/%.cpp $(DEPS)
+$(ODIR)/my-demo.o : $(SDIR)/my-demo.cpp
+	$(CC) -c -o $@ $< $(INCFLAGS) $(DIRFLAGS) $(DEF)
+
+.PHONY: clean
+
+clean:
+	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~

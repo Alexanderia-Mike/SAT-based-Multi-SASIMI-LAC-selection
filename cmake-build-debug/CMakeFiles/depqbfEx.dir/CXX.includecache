@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../depqbf/qdpll.h
+stdio.h
+-
+
+/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/depqbf/examples/basic-clause-groups-api-example-assumptions.cpp
+string.h
+-
+stdlib.h
+-
+stdio.h
+-
+assert.h
+-
+qdpll.h
+/Users/louchenfei/SAT-based-Multi-SASIMI-LAC-selection/depqbf/examples/qdpll.h
+

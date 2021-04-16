@@ -1,0 +1,13 @@
+.model  extremely_simple_testbench
+.inputs     a b
+.outputs    o1 o2
+
+# buffer
+.names a o1
+1 1
+
+# level 1
+.names	a b o2
+11 1
+
+.end
