@@ -45,6 +45,8 @@ int main(int argc, char * argv[])
     path outPrefix(outputPath);
     outPrefix += inputPath.stem().string();
 
+    clock_t time;
+    time = clock();
     // start abc
     Abc_Start();
 
@@ -54,7 +56,16 @@ int main(int argc, char * argv[])
     char * fileName4 = "in/2_bit_accurate_multiplier.blif";
     char * fileName5 = "in/Alexanderia_test_bench_2.blif";
     char * fileName6 = "in/Alexanderia_test_bench_3.blif";
-    Abc_Ntk_t * pNtkNetlist = Io_ReadBlif( fileName6, 1 );
+    char * fileName7 = "benchmarks/cavlc_depth_2018.blif";
+    char * fileName8 = "benchmarks/ctrl_depth_2017.blif";   // abc/src/misc/vec/vecPtr.h:388: void* Vec_PtrEntry(Vec_Ptr_t*, int): Assertion `i >= 0 && i < p->nSize' failed.
+    char * fileName9 = "benchmarks/int2float_depth_2018.blif";
+    char * fileName10 = "benchmarks/priority_depth_2018.blif";
+    Abc_Ntk_t * pNtkNetlist = Io_ReadBlif( fileName10, 1 );
+    cout << "the benchmark: " << Abc_NtkName( pNtkNetlist ) << endl << 
+        "number of PIs: " << Abc_NtkPiNum( pNtkNetlist ) << endl <<
+        "number of POs: " << Abc_NtkPoNum( pNtkNetlist ) << endl <<
+        "number of nodes:" << Abc_NtkNodeNum( pNtkNetlist ) << endl <<
+        "number of levels: " << Abc_NtkLevel( pNtkNetlist ) << endl;
 
     // sasimi + vecbee
 //    Abc_Ntk_t * pNtk = Abc_FrameReadNtk(pAbc);
@@ -63,16 +74,26 @@ int main(int argc, char * argv[])
 //    sasimiMng.GreedySelection(pNtk, outPrefix.string());
 
     int size = Abc_NtkPoNum( pNtkLogic );
+    if ( size == 1 )
+    {
+        cout << "the number of primary outputs must be larger than 1!" << endl;
+        return 0;
+    }
     int threshold[size];
     // assign the threshold
     for ( int i = 0; i < size; ++i )
         threshold[i] = 0;
-    threshold[size/3] = 1;
+    if ( size/3 != 0 )
+        threshold[size/3] = 1;
+    else
+        threshold[ 1 ] = 1;
 
     sasimiMng.SATBasedMultiSelection( pNtkLogic, outPrefix.string(), threshold );
 
     // stop abc
     Abc_Stop();
+    time = clock() - time;
+    printf( "time consumed: %6.2f sec\n", (float)(time) / (float)(CLOCKS_PER_SEC) );
 
     return 0;
 }

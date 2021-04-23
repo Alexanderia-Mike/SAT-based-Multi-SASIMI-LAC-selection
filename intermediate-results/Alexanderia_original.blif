@@ -1,9 +1,0 @@
-# Benchmark "extremely_simple_testbench" written by ABC on Thu Apr 15 15:35:24 2021
-.model extremely_simple_testbench
-.inputs a b
-.outputs o1 o2
-.names a o1
-1 1
-.names a b o2
-11 1
-.end

@@ -30,7 +30,7 @@ void N_Input_Sorting_Network ( IN Abc_Ntk_t * pNtk, IN const std::vector<Abc_Obj
     // to extract the first n elements as the result, and then return the result
     for ( int i = 0; i < n; ++i )
         result[i] = tempResult[i];
-    check_result( result, n );
+    check_result( result, n, pNtk );
 }
 
 void Elementary_Sorting_Unit ( IN Abc_Ntk_t * pNtk, IN Abc_Obj_t * a, IN Abc_Obj_t * b, OUT std::vector<Abc_Obj_t *> &result )
@@ -40,8 +40,18 @@ void Elementary_Sorting_Unit ( IN Abc_Ntk_t * pNtk, IN Abc_Obj_t * a, IN Abc_Obj
     result.resize( 2, nullptr );
 
     result[0] = Abc_AigAnd ( (Abc_Aig_t *) pNtk->pManFunc, a, b );
+
+    /*
+    // debug begin
+    Abc_Obj_t * pTemp = Abc_AigAnd( (Abc_Aig_t *) pNtk->pManFunc, Abc_ObjNot( a ), Abc_ObjNot( b ) );
+    Abc_Obj_t * pTemp2 = Abc_ObjNot( pTemp );
+    assert( pTemp->pNtk == pNtk );
+    assert( pTemp2->pNtk == pNtk );
+    // debug end
+    */
+
     result[1] = Abc_AigOr  ( (Abc_Aig_t *) pNtk->pManFunc, a, b );
-    check_result( result, 2 );
+    check_result( result, 2, pNtk );
 }
 
 void k_Merging_Unit ( IN Abc_Ntk_t * pNtk, IN const std::vector<Abc_Obj_t *> &a, IN const std::vector<Abc_Obj_t *> &b, OUT const int k, std::vector<Abc_Obj_t *> &result )
@@ -92,7 +102,7 @@ void k_Merging_Unit ( IN Abc_Ntk_t * pNtk, IN const std::vector<Abc_Obj_t *> &a,
         result[2*i-1]   = tempElementaryUnitResult[0];
         result[2*i]     = tempElementaryUnitResult[1];
     }
-    check_result( result, pow( 2, k+1 ) );
+    check_result( result, pow( 2, k+1 ), pNtk );
 }
 
 void Two_M_Input_Sorting_Module ( IN Abc_Ntk_t * pNtk, IN const std::vector<Abc_Obj_t *> &a, IN const int m, OUT std::vector<Abc_Obj_t *> &result )
@@ -130,14 +140,17 @@ void Two_M_Input_Sorting_Module ( IN Abc_Ntk_t * pNtk, IN const std::vector<Abc_
 
     // deal with the results returned by two smaller sorting network using k_merging_unit
     k_Merging_Unit( pNtk, tempResult1, tempResult2, m-1, result );
-    check_result( result, pow( 2, m ) );
+    check_result( result, pow( 2, m ), pNtk );
 }
 
-void check_result ( IN std::vector<Abc_Obj_t *> &result, int size )
+void check_result ( IN std::vector<Abc_Obj_t *> &result, IN int size, IN Abc_Ntk_t * pNtk )
 {
     // size matches the expectation
     assert( result.size() == size );
     // no element is a null pointer
     for ( int i = 0; i < size; ++i )
+    {
         assert( result[i] );
+        assert( Abc_ObjRegular( result[i] )->pNtk == pNtk );
+    }
 }

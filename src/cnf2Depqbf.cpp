@@ -116,9 +116,9 @@ QDPLLResult QDPLL_SolveSatWriteAssignments( QDPLL * depqbf, char * pFileName )
     else
     {
         if ( res == QDPLL_RESULT_SAT )
-            std::cout << "SAT! There exists a possible LAC!" << std::endl << "The solution is:" << std::endl;
+            std::cout << "---------- SAT! There exists a possible LAC!" << std::endl << "The solution is:" << std::endl;
         else
-            std::cout << "UNSAT! No possible LAC exists!" << std::endl << "The UNSAT core is:" << std::endl;
+            std::cout << "---------- UNSAT! No possible LAC exists!" << std::endl << "The UNSAT core is:" << std::endl;
         qdpll_print_qdimacs_output ( depqbf );
     }
     qdpll_reset( depqbf );

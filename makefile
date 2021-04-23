@@ -21,7 +21,7 @@ LIBS=-labc -lqdpll -lnenofex -lpicosat -lm -ldl -rdynamic -lreadline -ltermcap -
 _DEPS1 = abcApi.h cktBit.h cktUtil.h cmdline.h cnf2Depqbf.h debugAssert.h headers.h sasimi.h simulator.h
 DEPS = $(patsubst %,$(IDIR1)/%,$(_DEPS1))
 
-_OBJ1 = cktUtil.o main.o test.o sasimi.o SATBasedMultiSel.o simulator.o strashtest.o cnf2Depqbf.o sortingNetwork.o
+_OBJ1 = cktUtil.o main.o test.o sasimi.o SATBasedMultiSel.o simulator.o strashtest.o cnf2Depqbf.o sortingNetwork.o sorting_test.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ1))
 
 

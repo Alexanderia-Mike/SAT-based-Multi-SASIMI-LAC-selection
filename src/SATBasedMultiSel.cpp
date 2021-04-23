@@ -48,6 +48,8 @@ static void Miter_Add_Sorting_Network( Abc_Ntk_t * pMiter, int oriPINum, std::ve
 // use bisection algorithm to find the sorted selection signal with the least index which can be 1 with the presupposition
 // that the output of the miter is 1, under the quantification of inputs in cnf
 static int Sorted_Selection_Find_Least ( Abc_Ntk_t * pMiter, std::vector<Abc_Obj_t *> &sortedSelectionSignals, int OriPINum, int MUXPINum );
+// to copy the level information from originnal network to copied network
+static void Abc_NtkDupLevel( Abc_Ntk_t * pOriNtk, Abc_Ntk_t * pCopiedNtk );
 
 
 using namespace std;
@@ -56,12 +58,16 @@ using namespace std::filesystem;
 void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::string outPrefix, int threshold[] )
 {
     // init
-    char * cnfFileName = "intermediate-results/MiterCNF.cnf";
-    char * SATResultFileName = "intermediate-results/SATResult.qdimacs";
+    char * cnfFileName = "intermediate-results/Final_Miter_CNF.cnf";
+    char * SATResultFileName = "intermediate-results/SAT_Problem_QDIMACS.qdimacs";
     Abc_Ntk_t * pAppNtk = Abc_NtkDup(pOriNtk);
+    Abc_NtkDupLevel( pOriNtk, pAppNtk );
+    if ( AllLevelZero( pAppNtk, false ) )
+        cout << "all the objects have level 0!" << endl;
     PatchConst(pOriNtk); // add 0s and 1s to the original circuit
     PatchConst(pAppNtk); // add 0s and 1s to the approximate circuit
     Simulator_t oriSmlt(pOriNtk, nFrame); // initialize the oriSimulator
+    int ** pOriPIIDs = new int *, ** pMUXPIIDs = new int *;
 //    printFirstXPData( pAppNtk, 10 );    // print the pData for the first 10 nodes in <pAppNtk>
 
     // iteration
@@ -73,54 +79,48 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
     random_device rd;
 
     cntRound = 0;
-    cout << "--------------- SAT based Multiple LAC Selection now begins ---------------" << endl;
+    cout << "# SAT based Multiple LAC Selection now begins ---------------" << endl;
     Simulator_t * pAppSmlt = new Simulator_t(pAppNtk, nFrame);
-    // unsigned seed = static_cast <unsigned> (rd());   // random generation
-    unsigned seed = 2531465778;         // a fixed generation
-    cout << "seed = " << seed << endl;
-    cout << "maxLevel = " << maxLevel << endl;
+    unsigned seed = static_cast <unsigned> (rd());   // random generation
+    // unsigned seed = 2531465778;         // a fixed generation
+    cout << "--- seed = " << seed << endl;
+    cout << "--- maxLevel = " << maxLevel << endl;
     oriSmlt.Input(seed);        // initialize PI for original simulator
     oriSmlt.Simulate();
     pAppSmlt->Input(seed);      // initialize PI for approximate simulator
     pAppSmlt->Simulate();
+    cout << "--- getting CPM-one-cut" << endl;
     GetCPMOneCut(oriSmlt, *pAppSmlt, bds);
+    cout << "--- collecting mFFC" << endl;
     CollectMFFC(*pAppSmlt, vMffcs);     // collect the Mffcs of the approximate simulator
-    if ( AllLevelZero( pOriNtk, true ) )
-        cout << "all the objects have level 0!" << endl;
-    // TODO: why are <level> parameters of all nodes 0?
-
+    
+    cout << "--- collecting LACs" << endl;
     if (metricType == Metric_t::ER)     // get the LACs
         CollectAllLACsUnderER(oriSmlt, *pAppSmlt, bds, vMffcs, nodeLACs);
     else
         CollectAllLACsUnderNMED(oriSmlt, *pAppSmlt, bds, vMffcs, nodeLACs);
     FreeMFFC(vMffcs);                   // free the memory
     // sort the LACs according to their scores
+    cout << "--- sorting LACs" << endl;
     SortCandLACs(nodeLACs, pAppSmlt->GetFrameNum(), candLACs);
-    cout << "the number of candidate LACs is " << candLACs.size() << endl;
+    cout << "--- the number of candidate LACs is " << candLACs.size() << endl;
 
     // generate CNF expression according to the muxed network
-    int ** pOriPIIDs = new int *, ** pMUXPIIDs = new int *;
+    cout << "# Creating MUXed CNF! ------------------------------ " << endl;
     * pOriPIIDs = (int *) malloc( 0 ); * pMUXPIIDs = (int *) malloc( 0 );
-    
-    cout << "Creating MUXed CNF! ------------------------------ " << endl;
     CreateMuxedCNF( pAppNtk, candLACs, cnfFileName, threshold, pOriPIIDs, pMUXPIIDs );
 
-    //for (int i = 0; i < 5; ++i)
-    //    cout << "the i th OriPI's ID of pMiter is " << (* OriPIIDs)[i] << endl;
-    //for (int i = 0; i < 5; ++i)
-    //    cout << "the i th MUXPI's ID of pMiter is " << (* MUXPIIDs)[i] << endl;
-
     // call library depqbf
-    cout << "Solving Quantified SAT Problem! ------------------------------ " << endl;
+    cout << "# Solving Quantified SAT Problem! ------------------------------ " << endl;
     QDPLL *depqbf = qdpll_create ();
     qdpll_configure (depqbf, "--dep-man=simple");
     qdpll_configure (depqbf, "--incremental-use");
 
-    cout << "------- Loading CNF to Depqbf! -------" << endl;
+    cout << "------- Loading CNF to Depqbf!" << endl;
     Cnf_DataFile2Depqbf( cnfFileName, depqbf, * pOriPIIDs, * pMUXPIIDs );
     // solve the sat and store the results into the file <SATResultFileName>.
     // qdpll_reset( depqbf );
-    cout << "------- Solving the Result! -------" << endl;
+    cout << "------- Solving the Result!" << endl;
     QDPLLResult res = QDPLL_SolveSatWriteAssignments( depqbf, SATResultFileName );
 
     // TODO: generate the resulting approximate network and store it into a new blif file
@@ -128,7 +128,7 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
     // TODO: evaluate the area saved by this approximate local change.
 
     // free the dynamically allocated memory
-    cout << "------- Clearing Memory! -------" << endl;
+    cout << "------- Clearing Memory!" << endl;
     delete [] * pOriPIIDs;   delete pOriPIIDs;
     delete [] * pMUXPIIDs;   delete pMUXPIIDs;
     /* Delete solver instance. */
@@ -139,120 +139,95 @@ void SASIMI_Manager_t::SATBasedMultiSelection ( IN Abc_Ntk_t * pOriNtk, IN std::
 void SASIMI_Manager_t::CreateMuxedCNF ( IN Abc_Ntk_t * pMUXedNtk, IN std::vector <LAC_t> & candLACs, IN char * cnfFileName, int threshold[], int ** pOriPIIDs, int ** pMUXPIIDs )
 {
     Abc_Ntk_t * pOriNtk = Abc_NtkDup( pMUXedNtk ), * pNtkOriStrash, * pNtkMUXedStrash, * pMiter;
-    char * aigFileName = "intermediate-results/MiterAIG.aiger";
+    char * aigFileName = "intermediate-results/Alexanderia_Final_Miter_AIG.aiger";
+    char * naiveMiterName = "intermediate-results/Alexanderia_Naive_Miter.blif";
     Cnf_Dat_t * miterCnfData;
     int OriPINum, MUXPINum, selectionIndex;
     std::vector<Abc_Obj_t *> sortedSelectionSignals;
     Abc_Obj_t * pNewOutput, * pOriOutput, * pOriOutputFanin;
 
-    cout << "------- Adding MUX! -------" << endl;
+    cout << "------- Adding MUX!" << endl;
     AddMuxes( pMUXedNtk, candLACs );      // done
-    Ckt_WriteBlif( pOriNtk, "intermediate-results/Alexanderia_original.blif" ); // no problem
-    Ckt_WriteBlif( pMUXedNtk, "intermediate-results/Alexanderia_MUXAdded.blif" );   // no problem
-//    cout << "the checking result of oriNtk is " << Abc_NtkCheck( pOriNtk ) << endl;
-//    cout << "the checking result of MUXedNtk is " << Abc_NtkCheck( pMUXedNtk ) << endl;
+    Ckt_WriteBlif( pMUXedNtk, "intermediate-results/Alexanderia_MUXed_Network.blif" );   // no problem
 
-    cout << "------- Strashing Networks! -------" << endl;
+    cout << "------- Strashing Original and MUXed Network!" << endl;
     pNtkOriStrash = Abc_NtkStrash( pOriNtk, 0, 0, 0 );
     pNtkMUXedStrash = Abc_NtkStrash( pMUXedNtk, 0, 0, 0 );
 
-
     // create the miter
-    cout << "------- Creating Miter! -------" << endl;
+    cout << "------- Creating Miter!" << endl;
     pMiter = CreateMiterXorMulti ( pNtkMUXedStrash, pNtkOriStrash, threshold);
     assert( Abc_NtkPiNum( pMiter ) == Abc_NtkPiNum( pMUXedNtk ) );
-    cout << "------- Writing Miter Blif! -------" << endl;
-    Ckt_WriteBlif( pMiter, "intermediate-results/Alexanderia_Miter.blif" );
-    cout << "--- Miter is created successfully!" << endl << "the number of PI in original network is " <<
-        Abc_NtkPiNum( pOriNtk ) << endl << "the number of PI in miter is " << Abc_NtkPiNum( pMiter ) << endl;
+    cout << "------- Writing Miter Blif!" << endl;
+    Ckt_WriteBlif( pMiter, naiveMiterName );
 
+    cout << "-------------- Miter is created successfully!" << endl 
+        << "-------------- the number of PI in original network is " << Abc_NtkPiNum( pOriNtk ) << endl 
+        << "-------------- the number of PI in miter is " << Abc_NtkPiNum( pMiter ) << endl;
     OriPINum = Abc_NtkPiNum( pNtkOriStrash );   MUXPINum = Abc_NtkPiNum( pMiter ) - OriPINum;
-    // add the sorting network
-    cout << "------- Adding Sorting Network! -------" << endl;
+    
+    // add the sorting network.
+    cout << "------- Adding Sorting Network!" << endl;
     Miter_Add_Sorting_Network( pMiter, OriPINum, sortedSelectionSignals );
     assert( Abc_NtkPoNum( pMiter ) == 1 );
 
     // find the least index of the selection signal that could be ANDed with the miter output
-    cout << "------- Choosing the Least Valid Selection Signal! -------" << endl;
+    cout << "------- Choosing the Least Valid Selection Signal!" << endl;
     selectionIndex = Sorted_Selection_Find_Least( pMiter, sortedSelectionSignals, OriPINum, MUXPINum );
-    cout << "--- The least index of the valid selection signal is: " << selectionIndex << endl;
+    cout << "---------- The least index of the valid selection signal is: " << selectionIndex << endl;
+
     // AND the selection signal with the output
-    cout << "------- ANDing the Selection Signal with the Original Output! -------" << endl;
-    // get the old output and create the new output
-    pOriOutput = Abc_NtkPo( pMiter, 0 );
-    pOriOutputFanin = Abc_ObjFanin0( pOriOutput );
-    pNewOutput = Abc_NtkCreatePo( pMiter );
-    // add fanin to the new output
+    cout << "------- ANDing the Selection Signal with the Original Output!" << endl;
+    pOriOutput = Abc_NtkPo( pMiter, 0 );    // old output
+    pOriOutputFanin = Abc_ObjFanin0( pOriOutput );  // get the fanin of the old output
+    pNewOutput = Abc_NtkCreatePo( pMiter ); // create the new output
+    // add the AND(fanin, selection-signal) to the new output
     Abc_ObjAddFanin( pNewOutput, Abc_AigAnd( ( Abc_Aig_t * ) pMiter->pManFunc, pOriOutputFanin, sortedSelectionSignals[selectionIndex] ) );
-    // delete the old output
-    Abc_NtkDeleteObj( pOriOutput );
+    Abc_NtkDeleteObj( pOriOutput ); // delete the old output
     assert( Abc_NtkPoNum( pMiter ) == 1 );
 
-    // transform the network to cnf
-    cout << "------- Transforming to AIG! -------" << endl;
+    // transform the network to aig
+    cout << "------- Transforming to AIG!" << endl << "---------- ";
     Io_Write(pMiter, aigFileName, IO_FILE_AIGER );  // the index of PIs are indexed from 1 to <NumCIs>. Temporarily stored in <pObj->pCopy>. See lines 699 ~ 704 in "src/base/io/ioWriteAiger.c" for more details
     Aig_Man_t * miterAigMan = Ioa_ReadAiger( aigFileName, 1 );
     Aig_ManPrintStats( miterAigMan );
 
-    /*
-    // debug begin
-    int i, nOutputs = 0; Aig_Obj_t * pObj;
-    Aig_ManForEachCo( miterAigMan, pObj, i )
-    {
-        cout << "the type of CO is "; Aig_ObjPrint( miterAigMan, pObj ); cout << ", and its ID is " << Aig_ObjId( pObj ) << endl;
-        if ( i < Aig_ManCoNum( miterAigMan ) - nOutputs )
-        {
-            Aig_Obj_t * pFinalAnd = Aig_ObjFanin0( pObj );
-            cout << "the fanin of CO (final and) is "; Aig_ObjPrint( miterAigMan, pFinalAnd ); cout << " and is " << ( Aig_ObjFaninC0(pObj) ? "complemented!" : "not complemented" ) << endl; 
-            cout << "the first fanin of final and is "; Aig_ObjPrint( miterAigMan, Aig_ObjFanin0( pFinalAnd ) ); cout << " and is " << ( Aig_ObjFaninC0(pFinalAnd) ? "complemented!" : "not complemented" ) << endl; 
-            cout << "the second fanin of final and is "; Aig_ObjPrint( miterAigMan, Aig_ObjFanin1( pFinalAnd ) ); cout << " and is " << ( Aig_ObjFaninC1(pFinalAnd) ? "complemented!" : "not complemented" ) << endl; 
-        }
-    }
-    // debug end
-    */
-
+    // transform the aig to cnf
+    cout << "------- Transforming to CNF!" << endl;
     miterCnfData = Cnf_DeriveSimple( miterAigMan, 0 );  // the variable index in cnf is derived from iterating all COs, Internal nodes, CIs in the aig manager. For more details, see lines 624 ~ 630 in "src/sat/cnf/cnfWrite.c"
 
     // get PI's IDs
-    // int OriPIIDs[OriPINum], MUXPIIDs[MUXPINum];
-    cout << "------- Assigning PIIDs! -------" << endl;
+    cout << "------- Assigning PIIDs!" << endl;
     * pOriPIIDs = (int *) realloc( * pOriPIIDs, ( OriPINum + 1 ) * sizeof( int ) );
     * pMUXPIIDs = (int *) realloc( * pMUXPIIDs, ( MUXPINum + 1 ) * sizeof( int ) );
     assignPIIDs( miterCnfData, * pOriPIIDs, * pMUXPIIDs, OriPINum, MUXPINum, true );
 
     // write the cnf into the file
-    // char * cnfFileName = "intermediate-results/MiterCNF.cnf";
-    cout << "------- Writing Miter CNF! -------" << endl;
+    cout << "------- Writing Miter CNF!" << endl;
     Cnf_DataWriteIntoFile( miterCnfData, (char *) cnfFileName, 1, NULL, NULL );  // since fReadable=1, all the variables can be read by file without any trouble.
-
-    /*
-    // debug begin
-    Abc_Obj_t * pObj; int i; Aig_Obj_t * paObj;
-    cout << "for the PIs in original network, there are in total " << Abc_NtkPiNum( pOriNtk ) << " PIs, and their names are: " << endl;
-    Abc_NtkForEachPi( pNtkOriStrash, pObj, i )
-        cout << Abc_ObjName( pObj ) << ", ";
-    cout << endl << endl << "for the PIs in MUXed network, there are in total " << Abc_NtkPiNum( pMUXedNtk ) << " PIs, and their names are: " << endl;
-    Abc_NtkForEachPi( pNtkMUXedStrash, pObj, i )
-        cout << Abc_ObjName( pObj ) << ", ";
-    cout << endl << endl << "for the PIs in miter network, there are in total " << Abc_NtkPiNum( pMiter ) << " PIs, and their names are: " << endl;
-    Abc_NtkForEachPi( pMiter, pObj, i )
-        cout << Abc_ObjName( pObj ) << ", ";
-    cout << endl << endl << "for the PIs in miter aig, there are in total " << Aig_ManCiNum( miterAigMan ) << " PIs, and their names are: " << endl;
-    // debug end
-    */
 }
 
 void AddMuxes ( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & candLACs ) {
-    int count = 0; int i;
-    bool continue_flag; // if true, continue the outer loop
+    int count = 0, candLACNum = candLACs.size();
+    double previousProcession = 0, currentProcession = 0;
+    bool continue_flag; int i; // if true, continue the outer loop
     Abc_Obj_t * pObj;
     for ( auto & candLAC : candLACs ) {
         string test;
+        
         continue_flag = false;
         Abc_ObjForEachFanout( candLAC.GetTS(), pObj, i )
             if ( pObj->Id == candLAC.GetSS()->Id )
-                { std::cout << "shit!" << std::endl;    continue_flag = true;   break; }
+            { 
+                std::cout << "shit! the TS node is " << Abc_ObjName( candLAC.GetTS() ) <<
+                    " with level " << Abc_ObjLevel( candLAC.GetTS() ) << ", whiile the SS node is " << 
+                    Abc_ObjName( candLAC.GetSS() ) << " with level " << Abc_ObjLevel( candLAC.GetSS() ) << std::endl;
+                // level( SS ) < level( TS ).
+                continue_flag = true;
+                break;
+            }
         if ( continue_flag )    continue;
+
         Abc_Obj_t * selection = Abc_NtkCreatePi(pOriNtk);
         Abc_Obj_t * pMux = Abc_NtkCreateNodeMux( pOriNtk, selection, candLAC.GetSS(), candLAC.GetTS() );
         // print out informations
@@ -267,6 +242,12 @@ void AddMuxes ( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & candLACs ) {
 //        printMuxInfo( candLAC.GetTS(), candLAC.GetSS(), pMux );
 
         count ++;
+        currentProcession = count / (double) candLACNum;
+        if( currentProcession >= 0.1 && currentProcession - previousProcession >= 0.1 )
+        {
+            cout << "-------------- " << count << " (out of " << candLACNum << ") MUXes finished" << endl;
+            previousProcession = count / (double) candLACNum;
+        }
 //        test = (char *) pMux->pData;
 //        cout << "--pData for MUX is " << endl << test << endl;
 
@@ -333,7 +314,6 @@ static Abc_Ntk_t * CreateMiterXorMulti ( Abc_Ntk_t * pNtk1, Abc_Ntk_t * pNtk2, i
     Abc_AigConst1(pNtk1)->pCopy = Abc_AigConst1(pNtkMiter);
     Abc_AigConst1(pNtk2)->pCopy = Abc_AigConst1(pNtkMiter);
     // create new PIs and remember them in the old PIs
-    // also, get the IDs of the PIs of the miter at the same time
     Abc_NtkForEachPi( pNtk1, pObj, i )
     {
         pObjNew = Abc_NtkCreatePi( pNtkMiter );
@@ -561,12 +541,12 @@ void assignPIIDs( Cnf_Dat_t * miterCnfData, int * OriPIIDs, int * MUXPIIDs, int 
     // check the IDs
     if ( print )
     {
-        cout << "the length of OriPIIDs is " << OriPIIDs[0] << endl;
+        cout << "---------- the length of OriPIIDs is " << OriPIIDs[0] << endl;
         for (i = 1; i < OriPINum + 1; ++i)
-            cout << "the i th OriPI's ID of pMiter is " << OriPIIDs[i] << endl;
-        cout << "the length of MUXPIIDs is " << MUXPIIDs[0] << endl;
+            cout << "------------- the " << i << " th OriPI's ID of pMiter is " << OriPIIDs[i] << endl;
+        cout << "---------- the length of MUXPIIDs is " << MUXPIIDs[0] << endl;
         for (i = 1; i < MUXPINum + 1; ++i)
-            cout << "the i th MUXPI's ID of pMiter is " << MUXPIIDs[i] << endl;
+            cout << "------------- the " << i << " th MUXPI's ID of pMiter is " << MUXPIIDs[i] << endl;
     }
 }
 
@@ -603,11 +583,8 @@ static void Miter_Add_Sorting_Network ( Abc_Ntk_t * pMiter, int oriPINum, std::v
     
     miterPINum = Abc_NtkPiNum( pMiter );
     selectionNum = miterPINum - oriPINum;
-    if ( !sortedSelectionSignals.empty() )
-    {
-        sortedSelectionSignals.clear();
-        sortedSelectionSignals.resize( selectionNum, nullptr );
-    }
+    if ( !sortedSelectionSignals.empty() )  sortedSelectionSignals.clear();
+    sortedSelectionSignals.resize( selectionNum, nullptr );
     // if no selection signals in the first place, nothing needs done
     if ( selectionNum == 0 )    return;
     assert( selectionNum > 0 );
@@ -627,56 +604,71 @@ static void Miter_Add_Sorting_Network ( Abc_Ntk_t * pMiter, int oriPINum, std::v
 
 static int Sorted_Selection_Find_Least ( Abc_Ntk_t * pMiter, std::vector<Abc_Obj_t *> &sortedSelectionSignals, int OriPINum, int MUXPINum )
 {
-    int left, right, selectionNum, pointer;
+    int left, right, selectionNum, pointer, count = 0;
     Abc_Obj_t * pNewOutput, * pOriOutput, * pOriOutputFanin;
     Abc_Ntk_t * pMiterDup;
-    char * aigFileName = "intermediate-results/MiterDupAig.aiger";
-    char * cnfFileName = "intermediate-results/MiterDupCNF.cnf";
+    char * aigFileName = "intermediate-results/Final_Miter_DupAig.aiger";
+    char * cnfFileName = "intermediate-results/Miter_Dup_ANDed_CNF_FindLeast_Miter_From_File.cnf";
     std::vector<Abc_Obj_t *> sortedSelectionSignalsDup;
     Cnf_Dat_t * miterCnfData;
     Aig_Man_t * miterAigMan;
-    int OriPIIDs[OriPINum], MUXPIIDs[MUXPINum];
+    int OriPIIDs[OriPINum+1], MUXPIIDs[MUXPINum+1];
     selectionNum = sortedSelectionSignals.size();   left = 0;   right = selectionNum - 1;
+    for ( int i =0; i < sortedSelectionSignals.size(); ++i )
+        assert( Abc_ObjRegular( sortedSelectionSignals[i] )->pNtk == pMiter );
 
-    // debug begin
-    std::cout << "initial case: left = " << left << "; right = " << right << std::endl;
-    // debug end
+    std::cout << "----------- initial condition: left = " << left << "; right = " << right << std::endl;
 
     while ( left <= right )
     {
+        count ++;
         pointer = floor( ( left + right ) / 2.0 );
+        std::cout << "----------- " << count << " round: left = " << left << 
+            "; right = " << right << "; pointer = " << pointer << std::endl;
+        cout << "-------------- duplicating miter" << endl;
         pMiterDup = Abc_NtkDup( pMiter );
         assert( Abc_NtkPoNum( pMiterDup ) == 1 );
         sortedSelectionSignalsDup.clear();
         // assign the selection signals of the duplicate network to a new vector
-        for ( int i =0; i < sortedSelectionSignals.size(); ++i )
-            sortedSelectionSignalsDup.push_back( sortedSelectionSignals[i]->pCopy );
+        cout << "-------------- duplicating sorted selection signals" << endl;
+        for ( int i = 0; i < sortedSelectionSignals.size(); ++i )
+        {
+            sortedSelectionSignalsDup.push_back( 
+                Abc_ObjIsComplement( sortedSelectionSignals[i] ) ?
+                Abc_ObjNot( Abc_ObjRegular( sortedSelectionSignals[i] )->pCopy ) :
+                sortedSelectionSignals[i]->pCopy
+            );
+            assert( Abc_ObjRegular( sortedSelectionSignalsDup[i] )->pNtk == pMiterDup );
+        }
         
         // get the old output and create the new output
+        cout << "-------------- updating output" << endl;
         pOriOutput = Abc_NtkPo( pMiterDup, 0 );
         pOriOutputFanin = Abc_ObjFanin0( pOriOutput );
         pNewOutput = Abc_NtkCreatePo( pMiterDup );
         // add fanin to the new output
         Abc_ObjAddFanin( pNewOutput, Abc_AigAnd( ( Abc_Aig_t * ) pMiterDup->pManFunc, pOriOutputFanin, sortedSelectionSignalsDup[pointer] ) );
+        assert( Abc_NtkPoNum( pMiterDup ) == 2 );
         // delete the old output
         Abc_NtkDeleteObj( pOriOutput );
-
-        // debug begin
-        std::cout << "after adding the AND gate, the number of output is now: " << Abc_NtkPoNum( pMiterDup ) << std::endl;
-        // debug end
-
         assert( Abc_NtkPoNum( pMiterDup ) == 1 );
+        // write the new network into blif file for checking
+        cout << "-------------- writing duplicated miter blif" << endl;
+        Ckt_WriteBlif( pMiterDup, "intermediate-results/Alexanderia_AND_Added_Find_Least_Temporary_Miter.blif" );  // no problem
 
         // write into aig format
-        Io_Write(pMiter, aigFileName, IO_FILE_AIGER );  // the index of PIs are indexed from 1 to <NumCIs>. Temporarily stored in <pObj->pCopy>. See lines 699 ~ 704 in "src/base/io/ioWriteAiger.c" for more details
+        cout << "-------------- transforming to aig" << endl << "----------------- ";
+        Io_Write(pMiterDup, aigFileName, IO_FILE_AIGER );  // the index of PIs are indexed from 1 to <NumCIs>. Temporarily stored in <pObj->pCopy>. See lines 699 ~ 704 in "src/base/io/ioWriteAiger.c" for more details
         miterAigMan = Ioa_ReadAiger( aigFileName, 1 );
         Aig_ManPrintStats( miterAigMan );
+        cout << "-------------- transforming to cnf" << endl;
         miterCnfData = Cnf_DeriveSimple( miterAigMan, 0 );  // the variable index in cnf is derived from iterating all COs, Internal nodes, CIs in the aig manager. For more details, see lines 624 ~ 630 in "src/sat/cnf/cnfWrite.c"
         // get PI's IDs
-        // int OriPIIDs[OriPINum], MUXPIIDs[MUXPINum];
+        cout << "--------------  assigning PIIDs" << endl;
         assignPIIDs( miterCnfData, OriPIIDs, MUXPIIDs, OriPINum, MUXPINum, false );
         // write the cnf into the file
         // char * cnfFileName = "intermediate-results/MiterCNF.cnf";
+        cout << "-------------- writing cnf into file" << endl;
         Cnf_DataWriteIntoFile( miterCnfData, (char *) cnfFileName, 1, NULL, NULL );  // since fReadable=1, all the variables can be read by file without any trouble.
 
         // solve the cnf SAT using qdpll
@@ -684,22 +676,38 @@ static int Sorted_Selection_Find_Least ( Abc_Ntk_t * pMiter, std::vector<Abc_Obj
         qdpll_configure (depqbf, "--dep-man=simple");
         qdpll_configure (depqbf, "--incremental-use");
 
+        cout << "-------------- reading cnf into depqbf" << endl;
         Cnf_DataFile2Depqbf( cnfFileName, depqbf, OriPIIDs, MUXPIIDs );
         // solve the sat and store the results into the file <SATResultFileName>.
         // qdpll_reset( depqbf );
         // QDPLLResult res = QDPLL_SolveSatWriteAssignments( depqbf, SATResultFileName );
+        cout << "-------------- solving qsat" << endl;
         QDPLLResult res = qdpll_sat ( depqbf );
+        cout << "-------------- updating boundaries" << endl;
         if ( res == QDPLL_RESULT_SAT )
+        {
+            cout << "-------------- SAT! updating right pointer" << endl;
             right = pointer - 1;
+        }
         else
+        {
+            cout << "-------------- UNSAT! updating left pointer" << endl;
             left = pointer + 1;
-        qdpll_delete ( depqbf );
+        }
 
-        // debug begin
-        std::cout << "a new round: left = " << left << "; right = " << right << "; pointer = " << pointer << std::endl;
-        std::cout << "the result of SAT solver is " << res << std::endl;
-        qdpll_print_qdimacs_output ( depqbf );
-        // debug end
+        qdpll_delete ( depqbf );
     }
     return left;
+}
+
+static void Abc_NtkDupLevel( Abc_Ntk_t * pOriNtk, Abc_Ntk_t * pCopiedNtk )
+{
+    Abc_Obj_t * pOriObj, * pCopiedObj;
+    int i;
+    Abc_NtkForEachObj( pOriNtk, pOriObj, i )
+    {
+        pCopiedObj = Abc_NtkObj( pCopiedNtk, i );
+        assert( pOriObj->pCopy == pCopiedObj );
+        pCopiedObj->Level = pOriObj->Level;
+    }
 }

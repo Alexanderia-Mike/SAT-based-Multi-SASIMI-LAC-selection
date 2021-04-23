@@ -24,4 +24,4 @@ static void Two_M_Input_Sorting_Module ( IN Abc_Ntk_t * pNtk, IN const std::vect
 // DESCRIPTION: return an arrray of signals <out[]> with length n, which is the sorted elements in <a[]> in ascending order
 extern void N_Input_Sorting_Network ( IN Abc_Ntk_t * pNtk, IN const std::vector<Abc_Obj_t *> &a, IN const int n, OUT std::vector<Abc_Obj_t *> &result );
 // to check that the result of the sorting units or modules are correct
-static void check_result ( IN std::vector<Abc_Obj_t *> &result, int size );
+static void check_result ( IN std::vector<Abc_Obj_t *> &result, int size, IN Abc_Ntk_t * pNtk );
