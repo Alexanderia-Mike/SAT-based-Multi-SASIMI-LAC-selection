@@ -1,0 +1,16 @@
+.model initial_model
+.inputs x1 x2 x3
+.outputs x6 x7
+.names x1 x2 x4
+11 1
+.names x2 x3 x5
+01 1
+11 1
+10 1
+.names x4 x6
+0 1
+.names x4 x5 x7
+11 1
+10 1
+# 按照这个 真值表，x7 = x4 ?
+.end
