@@ -17,9 +17,10 @@ private:
     double errorBound;
 
     SASIMI_Manager_t & operator = (const SASIMI_Manager_t &);
-    SASIMI_Manager_t(const SASIMI_Manager_t &);
+    friend class SBMSM_t;
 
 public:
+    SASIMI_Manager_t(const SASIMI_Manager_t & sasimiMng);
     explicit SASIMI_Manager_t(Abc_Ntk_t * pNtk, int nFrame, int maxLevel, Metric_t metricType, double errorBound);
     ~SASIMI_Manager_t();
     // to apply SASIMI local approximate change until <errorBound> is reached,
@@ -37,12 +38,20 @@ public:
     void GetCPMOneCut(IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, OUT std::vector < std::vector <tVec> > & bds);
     // find out all the local approximate changes that does not violate error rate, and then store them in <nodeLACs>
     void CollectAllLACsUnderER(IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, IN std::vector < std::vector <tVec> > & bds, IN std::vector <Vec_Ptr_t * > & vMffcs, OUT std::vector <LAC_t> & nodeLACs);
+
+    void Alexanderia_CollectAllLACsUnderER( IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, IN std::vector < std::vector <tVec> > & bds, IN std::vector <Vec_Ptr_t *> & vMffcs, OUT std::vector <LAC_t> & nodeLACs, OUT std::vector <LAC_t> & nodeLACsDup, IN Abc_Ntk_t * pAppNtkDup );
     // find out all the local approximate changes that does not violate mean error distance, and then store them in <nodeLACs>
     void CollectAllLACsUnderNMED(IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, IN std::vector < std::vector <tVec> > & bds, IN std::vector <Vec_Ptr_t * > & vMffcs, OUT std::vector <LAC_t> & nodeLACs);
+
+    void Alexanderia_CollectAllLACsUnderNMED( IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, IN std::vector < std::vector <tVec> > & bds, IN std::vector <Vec_Ptr_t * > & vMffcs, OUT std::vector <LAC_t> & nodeLACs, OUT std::vector <LAC_t> & nodeLACsDup, IN Abc_Ntk_t * pAppNtkDup );
     // called by CollectAllLACsUnderER
     void CollectNodeLACUnderER(IN Abc_Obj_t * pTS, IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, IN std::vector <tVec> & isERInc, IN std::vector <tVec> & isERDec, IN std::vector <tVec> & sources, IN std::vector <Vec_Ptr_t * > & vMffcs, IN int baseER, OUT LAC_t & nodeLAC);
+
+    void Alexanderia_CollectNodeLACUnderER(IN Abc_Obj_t * pTS, IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, IN std::vector <tVec> & isERInc, IN std::vector <tVec> & isERDec, IN std::vector <tVec> & sources, IN std::vector <Vec_Ptr_t * > & vMffcs, IN int baseER, OUT LAC_t & nodeLAC, OUT LAC_t & nodeLACDup, IN Abc_Obj_t * pTSDup, IN Abc_Ntk_t * pAppNtkDup);
     // called by CollectAllLACsUnderNMED
     void CollectNodeLACUnderNMED(IN Abc_Obj_t * pTS, IN Simulator_t & appSmlt, IN std::vector <int64_t> & oriOutputs, IN std::vector <int64_t> & appOutputs, IN tVec & bdNode, IN std::vector <tVec> & sources, IN std::vector <Vec_Ptr_t * > & vMffcs, IN int64_t baseNMED, OUT LAC_t & nodeLAC);
+
+    void Alexanderia_CollectNodeLACUnderNMED(IN Abc_Obj_t * pTS, IN Simulator_t & appSmlt, IN std::vector <int64_t> & oriOutputs, IN std::vector <int64_t> & appOutputs, IN tVec & bdNode, IN std::vector <tVec> & sources, IN std::vector <Vec_Ptr_t * > & vMffcs, IN int64_t baseNMED, OUT LAC_t & nodeLAC, OUT LAC_t & nodeLACDup, IN Abc_Obj_t * pTSDup, IN Abc_Ntk_t * pAppNtkDup);
     // sort the LACs in <nodeLACs> according to their scores and then store the results in <candLACs>
     void SortCandLACs(IN std::vector <LAC_t> & nodeLACs, IN int nFrame, OUT std::vector <LAC_t> & candLACs);
     // apply the best <topNum> candidates and then store the resulting circuit in "<outPrefix>_sth.blif"
@@ -88,7 +97,7 @@ public:
      *      <nodeLACs>, create the CNF encoding of the Muxed network and store
      *      the result in the file <cnfPrefix>.cnf
      */
-    void CreateMuxedCNF( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & nodeLACs, IN char * cnfFileName, int threshold[], int ** OriPIIDs, int ** MUXPIIDs );
+    bool CreateMuxedCNF( IN Abc_Ntk_t * pOriNtk, IN std::vector <LAC_t> & nodeLACs, IN char * cnfFileName, int threshold[], int ** OriPIIDs, int ** MUXPIIDs, int * pNCnfVars );
 
     /** SatSolveApply ****************************************************************
      * 

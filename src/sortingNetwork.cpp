@@ -12,6 +12,12 @@ void N_Input_Sorting_Network ( IN Abc_Ntk_t * pNtk, IN const std::vector<Abc_Obj
     double intPart;
     if ( std::modf( log2( (double) n ), &intPart ) == 0.0 )     // n == 2^intPart + <the value returned by "modf">
     {
+        if ( intPart == 0 )
+        {
+            if ( !result.empty() )  result.clear();
+            result.push_back( a[0] );
+            return;
+        }
         Two_M_Input_Sorting_Module( pNtk, a, intPart, result );
         return;
     }

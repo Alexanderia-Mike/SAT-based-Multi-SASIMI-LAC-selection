@@ -10,6 +10,15 @@ SASIMI_Manager_t::SASIMI_Manager_t(Abc_Ntk_t * pNtk, int nFrame, int maxLevel, M
 {
 }
 
+SASIMI_Manager_t::SASIMI_Manager_t( const SASIMI_Manager_t & sasimiMng )
+{
+    nFrame      = sasimiMng.nFrame;
+    maxLevel    = sasimiMng.maxLevel;
+    cntRound    = sasimiMng.cntRound;
+    metricType  = sasimiMng.metricType;
+    errorBound  = sasimiMng.errorBound;
+}
+
 
 SASIMI_Manager_t::~SASIMI_Manager_t()
 {
@@ -181,7 +190,7 @@ void SASIMI_Manager_t::GetCPMOneCut(IN Simulator_t & oriSmlt, IN Simulator_t & a
 }
 
 
-void SASIMI_Manager_t::CollectAllLACsUnderER(IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, IN vector < vector <tVec> > & bds, IN vector <Vec_Ptr_t *> & vMffcs, OUT vector <LAC_t> & nodeLACs)
+void SASIMI_Manager_t::CollectAllLACsUnderER(IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, IN vector < vector <tVec> > & bds, IN vector <Vec_Ptr_t *> & vMffcs, OUT vector <LAC_t> & nodeLACs )
 {
     Abc_Ntk_t * pOriNtk = oriSmlt.GetNetwork();
     Abc_Ntk_t * pAppNtk = appSmlt.GetNetwork();
@@ -767,31 +776,31 @@ void SASIMI_Manager_t::GetDNMED(IN Simulator_t & appSmlt, IN vector <int64_t> & 
 
 double SASIMI_Manager_t::GetDArea(Abc_Obj_t * pTS, Abc_Obj_t * pSS, vector <Vec_Ptr_t *> & vMffcs)
 {
-//    DASSERT(Abc_NtkIsMappedLogic(pTS->pNtk) && pTS->pNtk == pSS->pNtk);
-//    Abc_Obj_t * pObj = nullptr;
-//    int i = 0;
-//    set <Abc_Obj_t *> m1;
-//    Vec_PtrForEachEntry(Abc_Obj_t *, vMffcs[pTS->Id], pObj, i)
-//        m1.insert(pObj);
-//    set <Abc_Obj_t *> m2;
-//    if (Abc_ObjIsNode(pSS)) {
-//        Vec_PtrForEachEntry(Abc_Obj_t *, vMffcs[pSS->Id], pObj, i)
-//            m2.insert(pObj);
-//    }
-//
-//    vector <Abc_Obj_t *> mInter(max(m1.size(), m2.size()));
-//    auto iter = set_intersection(m1.begin(), m1.end(), m2.begin(), m2.end(), mInter.begin());
-//    mInter.resize(iter - mInter.begin());
-//    vector <Abc_Obj_t *> mDiff(m1.size());
-//    iter = set_difference(m1.begin(), m1.end(), mInter.begin(), mInter.end(), mDiff.begin());
-//    mDiff.resize(iter - mDiff.begin());
-//
-//    double dArea = 0;
-//    for (auto & pObj: mDiff)
-//        dArea += Mio_GateReadArea( (Mio_Gate_t *)pObj->pData );
-//
-//    return dArea;
-    return 1;
+   DASSERT(Abc_NtkIsMappedLogic(pTS->pNtk) && pTS->pNtk == pSS->pNtk);
+   Abc_Obj_t * pObj = nullptr;
+   int i = 0;
+   set <Abc_Obj_t *> m1;
+   Vec_PtrForEachEntry(Abc_Obj_t *, vMffcs[pTS->Id], pObj, i)
+       m1.insert(pObj);
+   set <Abc_Obj_t *> m2;
+   if (Abc_ObjIsNode(pSS)) {
+       Vec_PtrForEachEntry(Abc_Obj_t *, vMffcs[pSS->Id], pObj, i)
+           m2.insert(pObj);
+   }
+
+   vector <Abc_Obj_t *> mInter(max(m1.size(), m2.size()));
+   auto iter = set_intersection(m1.begin(), m1.end(), m2.begin(), m2.end(), mInter.begin());
+   mInter.resize(iter - mInter.begin());
+   vector <Abc_Obj_t *> mDiff(m1.size());
+   iter = set_difference(m1.begin(), m1.end(), mInter.begin(), mInter.end(), mDiff.begin());
+   mDiff.resize(iter - mDiff.begin());   // target - inter
+
+   double dArea = 0;
+   for (auto & pObj: mDiff)
+       dArea += Mio_GateReadArea( (Mio_Gate_t *)pObj->pData );
+
+   return dArea;
+//     return 1;
 }
 
 
@@ -910,18 +919,533 @@ void LAC_t::Print() const
 
 bool LAC_t::operator < (const LAC_t & other) const
 {
+    // if (this->FOM < 0 && other.FOM > 0)
+    //     return true;
+    // if (this->FOM > 0 && other.FOM < 0)
+    //     return false;
+    // if (this->FOM > 0 && other.FOM > 0) {
+    //     if (this->FOM == other.FOM)
+    //         return this->dArea > other.dArea;
+    //     else
+    //         return this->FOM > other.FOM;
+    // }
+    // if (this->FOM == other.FOM)
+    //     return this->dArea > other.dArea;
+    // else
+    //     return this->FOM < other.FOM;
     if (this->FOM < 0 && other.FOM > 0)
         return true;
     if (this->FOM > 0 && other.FOM < 0)
         return false;
     if (this->FOM > 0 && other.FOM > 0) {
-        if (this->FOM == other.FOM)
-            return this->dArea > other.dArea;
-        else
-            return this->FOM > other.FOM;
-    }
-    if (this->FOM == other.FOM)
         return this->dArea > other.dArea;
-    else
-        return this->FOM < other.FOM;
+    }
+    return this->dArea > other.dArea;
+}
+
+
+void SASIMI_Manager_t::Alexanderia_CollectAllLACsUnderER(IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, IN vector < vector <tVec> > & bds, IN vector <Vec_Ptr_t *> & vMffcs, OUT vector <LAC_t> & nodeLACs, OUT vector <LAC_t> & nodeLACsDup, IN Abc_Ntk_t * pAppNtkDup )
+{
+    Abc_Ntk_t * pOriNtk = oriSmlt.GetNetwork();
+    Abc_Ntk_t * pAppNtk = appSmlt.GetNetwork();
+    nodeLACs.resize(appSmlt.GetMaxId() + 1);
+    nodeLACsDup.resize(appSmlt.GetMaxId() + 1);
+    assert( nodeLACs.size() == nodeLACsDup.size() );
+    for (auto & nodeLAC : nodeLACs)
+        nodeLAC.Init();
+    for (auto & nodeLAC : nodeLACsDup)
+        nodeLAC.Init();
+    assert( nodeLACs.size() == nodeLACsDup.size() );
+    // update PO correctness
+    int nBlock = oriSmlt.GetBlockNum();
+    vector <tVec> poKRight(Abc_NtkPoNum(pAppNtk), tVec(nBlock));
+    tVec allPoRight(nBlock);
+    for (int i = 0; i < nBlock; ++i)
+        allPoRight[i] = static_cast <uint64_t> (ULLONG_MAX);
+    for (int i = 0; i < Abc_NtkPoNum(pOriNtk); ++i) {
+        Abc_Obj_t * pOriPo = Abc_NtkPo(pOriNtk, i);
+        Abc_Obj_t * pAppPo = Abc_NtkPo(pAppNtk, i);
+        for (int j = 0; j < nBlock; ++j) {
+            poKRight[i][j] = ~(oriSmlt.GetValues(pOriPo, j) ^ appSmlt.GetValues(pAppPo, j));
+            allPoRight[j] &= poKRight[i][j];
+        }
+    }
+    // update increase/decrease flag
+    vector <tVec> isERInc(appSmlt.GetMaxId() + 1, tVec(nBlock));
+    vector <tVec> isERDec(appSmlt.GetMaxId() + 1, tVec(nBlock));
+    Abc_Obj_t * pObj = nullptr;
+    int i = 0;
+    Abc_NtkForEachNode(pAppNtk, pObj, i) {
+        for (int j = 0; j < nBlock; ++ j) {
+            isERInc[pObj->Id][j] = 0;
+            isERDec[pObj->Id][j] = static_cast <uint64_t> (ULLONG_MAX);
+        }
+    }
+    for (int i = 0; i < Abc_NtkPoNum(pOriNtk); ++i) {
+        int j = 0;
+        Abc_NtkForEachNode(pAppNtk, pObj, j) {
+            for (int k = 0; k < nBlock; ++k) {
+                isERInc[pObj->Id][k] |= bds[i][pObj->Id][k];
+                isERDec[pObj->Id][k] &= (poKRight[i][k] ^ bds[i][pObj->Id][k]);
+            }
+        }
+    }
+    uint64_t lastBlockMask = 0;
+    for (int i = 0; i < appSmlt.GetLastBlockLen(); ++i)
+        Ckt_SetBit(lastBlockMask, i);
+    Abc_NtkForEachNode(pAppNtk, pObj, i) {
+        for (int j = 0; j < nBlock; ++ j) {
+            isERInc[pObj->Id][j] &= allPoRight[j];
+            isERDec[pObj->Id][j] &= ~allPoRight[j];
+            if (j == nBlock - 1) {
+                isERInc[pObj->Id][j] &= lastBlockMask;
+                isERDec[pObj->Id][j] &= lastBlockMask;
+            }
+        }
+    }
+    // update PI flag
+    int sourceLen = (Abc_NtkPiNum(pAppNtk) >> 6) + 1;
+    vector <tVec> sources(appSmlt.GetMaxId() + 1);
+    Abc_NtkForEachObj(pAppNtk, pObj, i)
+        sources[pObj->Id].resize(sourceLen, 0);
+    Abc_NtkForEachPi(pAppNtk, pObj, i)
+        Ckt_SetBit(sources[pObj->Id][i >> 6], i);
+    vector <Abc_Obj_t *> danglePIs;
+    Abc_NtkForEachPi(pAppNtk, pObj, i) {
+        if (!Abc_ObjFanoutNum(pObj)) {
+            danglePIs.emplace_back(pObj);
+        }
+    }
+    Vec_Ptr_t * vNodes = Abc_NtkDfs(pAppNtk, 0);
+    Vec_PtrForEachEntry(Abc_Obj_t *, vNodes, pObj, i) {
+        Abc_Obj_t * pFanin = nullptr;
+        int j = 0;
+        Abc_ObjForEachFanin(pObj, pFanin, j) {
+            for (int k = 0; k < sourceLen; ++k)
+                sources[pObj->Id][k] |= sources[pFanin->Id][k];
+        }
+        for (auto & danglePI: danglePIs) {
+            for (int k = 0; k < sourceLen; ++k)
+                sources[pObj->Id][k] |= sources[danglePI->Id][k];
+        }
+    }
+    Vec_PtrFree(vNodes);
+    assert( nodeLACs.size() == nodeLACsDup.size() );
+    // collect one LAC for each node
+    int baseER = GetER(&oriSmlt, &appSmlt);
+    Abc_NtkForEachNode(pAppNtk, pObj, i) {
+        if (!Abc_NodeIsConst(pObj)) {
+            // pObj is pTS
+            Alexanderia_CollectNodeLACUnderER(pObj, oriSmlt, appSmlt, isERInc, isERDec, sources, vMffcs, baseER, nodeLACs[pObj->Id], nodeLACsDup[pObj->Id], Abc_NtkObj( pAppNtkDup, i ), pAppNtkDup);
+        }
+    }
+    assert( nodeLACs.size() == nodeLACsDup.size() );
+    for ( int i = 0; i < nodeLACs.size(); ++i )
+        if ( nodeLACs[i].GetSS() ) 
+            assert( nodeLACsDup[i].GetSS()->pNtk == nodeLACsDup[i].GetTS()->pNtk );
+}
+
+void SASIMI_Manager_t::Alexanderia_CollectNodeLACUnderER(IN Abc_Obj_t * pTS, IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, IN std::vector <tVec> & isERInc, IN std::vector <tVec> & isERDec, IN std::vector <tVec> & sources, IN std::vector <Vec_Ptr_t * > & vMffcs, IN int baseER, OUT LAC_t & nodeLAC, OUT LAC_t & nodeLACDup, Abc_Obj_t * pTSDup, IN Abc_Ntk_t * pAppNtkDup)
+{
+    // static int64_t totLACs;
+    // static int64_t CP;
+    // static double AERD;
+    // double accError = 0.0;
+    // double estError = 0.0;
+
+    Abc_Ntk_t * pAppNtk = appSmlt.GetNetwork();
+    DASSERT(pAppNtk == pTS->pNtk);
+    double errorBoundInt = errorBound * appSmlt.GetFrameNum();
+    double invDelay = 0;
+    int areaInv = 0;
+    int areaBuf = 0;
+    nodeLAC.SetFOM(0.0);
+    nodeLACDup.SetFOM(0.0);
+    // consider constant replacement
+    Abc_Obj_t * pConst0 = Ckt_GetConst(pAppNtk, 0);
+    Abc_Obj_t * pConst0Dup = Ckt_GetConst(pAppNtkDup, 0);
+    pair <int, int> dErrors;
+    GetDER(appSmlt, pTS, pConst0, isERInc, isERDec, dErrors);
+    // cout << Abc_ObjName(pTS) << ",0," << dErrors.first / static_cast <double>(appSmlt.GetFrameNum()) << ",," << endl;
+    if (baseER + dErrors.first <= errorBoundInt) {
+        double dArea = GetDArea(pTS, pConst0, vMffcs);
+        double tempFOM = dArea / (dErrors.first + 1e-10);
+        if ((dErrors.first < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.first >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+        {
+            nodeLAC.Update(pTS, pConst0, false, dErrors.first, dArea, tempFOM);
+            nodeLACDup.Update(pTSDup, pConst0Dup, false, dErrors.first, dArea, tempFOM);
+        }
+    }
+    // ++totLACs;
+    // accError = MeasureSASIMIER(&oriSmlt, &appSmlt, pTS, pConst0, 0, true);
+    // estError = (baseER + dErrors.first) / static_cast <double>(appSmlt.GetFrameNum());
+    // if (abs(accError - estError) < 1e-10) ++CP;
+    // AERD += abs(accError - estError);
+
+    Abc_Obj_t * pConst1 = Ckt_GetConst(pAppNtk, 1);
+    Abc_Obj_t * pConst1Dup = Ckt_GetConst(pAppNtkDup, 1);
+    GetDER(appSmlt, pTS, pConst1, isERInc, isERDec, dErrors);
+    // cout << Abc_ObjName(pTS) << ",1," << dErrors.first / static_cast <double>(appSmlt.GetFrameNum()) << ",," << endl;
+    if (baseER + dErrors.first <= errorBoundInt) {
+        double dArea = GetDArea(pTS, pConst1, vMffcs);
+        double tempFOM = dArea / (dErrors.first + 1e-10);
+        if ((dErrors.first < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.first >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+        {
+            nodeLAC.Update(pTS, pConst1, false, dErrors.first, dArea, tempFOM);
+            nodeLACDup.Update(pTSDup, pConst1Dup, false, dErrors.first, dArea, tempFOM);
+        }
+    }
+    // ++totLACs;
+    // accError = MeasureSASIMIER(&oriSmlt, &appSmlt, pTS, pConst1, 0, true);
+    // estError = (baseER + dErrors.first) / static_cast <double>(appSmlt.GetFrameNum());
+    // if (abs(accError - estError) < 1e-10) ++CP;
+    // AERD += abs(accError - estError);
+
+    // consider other nodes' replacement
+    Abc_Obj_t * pSS= nullptr;
+    int i = 0;
+    Abc_NtkForEachNode(pAppNtk, pSS, i) {
+        if (Abc_NodeIsConst(pSS))
+            continue;
+        if (Abc_ObjLevel(pSS) > Abc_ObjLevel(pTS))
+            continue;
+        if (pTS == pSS)
+            continue;
+        DASSERT(sources[pTS->Id].size() == sources[pSS->Id].size());
+        bool isSkip = true;
+        for (int j = 0; j < static_cast <int>(sources[pTS->Id].size()); ++j) {
+            if (sources[pTS->Id][j] & sources[pSS->Id][j]) {
+                isSkip = false;
+                break;
+            }
+        }
+        if (isSkip)
+            continue;
+        if (Abc_NodeIsBuf(pTS) && Abc_ObjFanin0(pTS) == pSS)
+            continue;
+        Abc_Obj_t * pFanin = nullptr;
+        int j = 0;
+        isSkip = false;
+        Abc_ObjForEachFanin(pTS, pFanin, j) {
+            if (pFanin == pSS) {
+                isSkip = true;
+                break;
+            }
+        }
+        if (isSkip)
+            continue;
+        GetDER(appSmlt, pTS, pSS, isERInc, isERDec, dErrors);
+        // cout << Abc_ObjName(pTS) << "," << Abc_ObjName(pSS) << "," << dErrors.first / static_cast <double>(appSmlt.GetFrameNum()) << "," << dErrors.second / static_cast <double>(appSmlt.GetFrameNum()) << endl;
+        if (baseER + dErrors.first <= errorBoundInt || (baseER + dErrors.second <= errorBoundInt && Abc_ObjLevel(pTS) >= Abc_ObjLevel(pSS) +  invDelay * 1000)) {
+            double dArea = GetDArea(pTS, pSS, vMffcs);
+            if (dErrors.first <= dErrors.second) {
+                Abc_Obj_t * pFanout = nullptr;
+                int j = 0;
+                bool isPoDriver = false;
+                Abc_ObjForEachFanout(pSS, pFanout, j) {
+                    if (Abc_ObjIsPo(pFanout)) {
+                        isPoDriver = true;
+                        break;
+                    }
+                }
+                if (isPoDriver)
+                    dArea -= areaBuf;
+                double tempFOM = dArea / (dErrors.first + 1e-10);
+                if ((dErrors.first < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.first >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+                {
+                    nodeLAC.Update(pTS, pSS, false, dErrors.first, dArea, tempFOM);
+                    nodeLACDup.Update(pTSDup, Abc_NtkObj( pAppNtkDup, i ), false, dErrors.first, dArea, tempFOM);
+                }
+            }
+            else if (Abc_ObjLevel(pTS) >= Abc_ObjLevel(pSS) +  invDelay * 1000) {
+                dArea -= areaInv;
+                double tempFOM = dArea / (dErrors.second + 1e-10);
+                if ((dErrors.second < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.second >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+                {
+                    nodeLAC.Update(pTS, pSS, true, dErrors.second, dArea, tempFOM);
+                    nodeLACDup.Update(pTSDup, Abc_NtkObj( pAppNtkDup, i ), true, dErrors.second, dArea, tempFOM);
+                }
+            }
+        }
+        // ++totLACs;
+        // accError = MeasureSASIMIER(&oriSmlt, &appSmlt, pTS, pSS, 0, true);
+        // estError = (baseER + dErrors.first) / static_cast <double>(appSmlt.GetFrameNum());
+        // if (abs(accError - estError) < 1e-10) ++CP;
+        // AERD += abs(accError - estError);
+        // ++totLACs;
+        // accError = MeasureSASIMIER(&oriSmlt, &appSmlt, pTS, pSS, 1, true);
+        // estError = (baseER + dErrors.second) / static_cast <double>(appSmlt.GetFrameNum());
+        // if (abs(accError - estError) < 1e-10) ++CP;
+        // AERD += abs(accError - estError);
+    }
+
+    // consider PI replacement
+    if (Abc_NodeIsBuf(pTS) && Abc_ObjIsPi(Abc_ObjFanin0(pTS)))
+        return;
+    Abc_NtkForEachPi(pAppNtk, pSS, i) {
+        bool isSkip = true;
+        for (int j = 0; j < static_cast <int>(sources[pTS->Id].size()); ++j) {
+            if (sources[pTS->Id][j] & sources[pSS->Id][j]) {
+                isSkip = false;
+                break;
+            }
+        }
+        if (isSkip)
+            continue;
+        GetDER(appSmlt, pTS, pSS, isERInc, isERDec, dErrors);
+        // cout << Abc_ObjName(pTS) << "," << Abc_ObjName(pSS) << "," << dErrors.first / static_cast <double>(appSmlt.GetFrameNum()) << "," << dErrors.second / static_cast <double>(appSmlt.GetFrameNum()) << endl;
+        if (baseER + dErrors.first <= errorBoundInt || baseER + dErrors.second <= errorBoundInt) {
+            double dArea = GetDArea(pTS, pSS, vMffcs);
+            if (dErrors.first <= dErrors.second) {
+                dArea -= areaBuf;
+                double tempFOM = dArea / (dErrors.first + 1e-10);
+                if ((dErrors.first < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.first >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+                {
+                    nodeLAC.Update(pTS, pSS, false, dErrors.first, dArea, tempFOM);
+                    nodeLACDup.Update(pTSDup, Abc_NtkPi( pAppNtkDup, i ), false, dErrors.first, dArea, tempFOM);
+                }
+            }
+            else {
+                dArea -= areaInv;
+                double tempFOM = dArea / (dErrors.second + 1e-10);
+                if ((dErrors.second < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.second >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+                {
+                    nodeLAC.Update(pTS, pSS, true, dErrors.second, dArea, tempFOM);
+                    nodeLACDup.Update(pTSDup, Abc_NtkPi( pAppNtkDup, i ), true, dErrors.second, dArea, tempFOM);
+                }
+            }
+        }
+        // ++totLACs;
+        // accError = MeasureSASIMIER(&oriSmlt, &appSmlt, pTS, pSS, 0, true);
+        // estError = (baseER + dErrors.first) / static_cast <double>(appSmlt.GetFrameNum());
+        // if (abs(accError - estError) < 1e-10) ++CP;
+        // AERD += abs(accError - estError);
+        // ++totLACs;
+        // accError = MeasureSASIMIER(&oriSmlt, &appSmlt, pTS, pSS, 1, true);
+        // estError = (baseER + dErrors.second) / static_cast <double>(appSmlt.GetFrameNum());
+        // if (abs(accError - estError) < 1e-10) ++CP;
+        // AERD += abs(accError - estError);
+    }
+    // cout << totLACs << "," << CP / static_cast <double> (totLACs) << "," << AERD / totLACs << endl;
+    if ( nodeLAC.GetSS() )
+    {
+        assert( nodeLAC.GetSS()->pNtk == nodeLAC.GetTS()->pNtk );
+        assert( nodeLACDup.GetSS()->pNtk == nodeLACDup.GetTS()->pNtk );
+    }
+}
+
+void SASIMI_Manager_t::Alexanderia_CollectAllLACsUnderNMED( IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, IN std::vector < std::vector <tVec> > & bds, IN std::vector <Vec_Ptr_t * > & vMffcs, OUT std::vector <LAC_t> & nodeLACs, OUT std::vector <LAC_t> & nodeLACsDup, IN Abc_Ntk_t * pAppNtkDup )
+{
+    Abc_Ntk_t * pAppNtk = appSmlt.GetNetwork();
+    nodeLACs.resize(appSmlt.GetMaxId() + 1);
+    nodeLACsDup.resize(appSmlt.GetMaxId() + 1);
+    for (auto & nodeLAC : nodeLACs)
+        nodeLAC.Init();
+    for (auto & nodeLAC : nodeLACsDup)
+        nodeLAC.Init();
+    // update PI flag
+    int sourceLen = (Abc_NtkPiNum(pAppNtk) >> 6) + 1;
+    vector <tVec> sources(appSmlt.GetMaxId() + 1);
+    Abc_Obj_t * pObj = nullptr;
+    int i = 0;
+    Abc_NtkForEachObj(pAppNtk, pObj, i)
+        sources[pObj->Id].resize(sourceLen, 0);
+    Abc_NtkForEachPi(pAppNtk, pObj, i)
+        Ckt_SetBit(sources[pObj->Id][i >> 6], i);
+    vector <Abc_Obj_t *> danglePIs;
+    Abc_NtkForEachPi(pAppNtk, pObj, i) {
+        if (!Abc_ObjFanoutNum(pObj)) {
+            danglePIs.emplace_back(pObj);
+        }
+    }
+    Vec_Ptr_t * vNodes = Abc_NtkDfs(pAppNtk, 0);
+    Vec_PtrForEachEntry(Abc_Obj_t *, vNodes, pObj, i) {
+        Abc_Obj_t * pFanin = nullptr;
+        int j = 0;
+        Abc_ObjForEachFanin(pObj, pFanin, j) {
+            for (int k = 0; k < sourceLen; ++k)
+                sources[pObj->Id][k] |= sources[pFanin->Id][k];
+        }
+        for (auto & danglePI: danglePIs) {
+            for (int k = 0; k < sourceLen; ++k)
+                sources[pObj->Id][k] |= sources[danglePI->Id][k];
+        }
+    }
+    Vec_PtrFree(vNodes);
+    // collect correct outputs
+    int nPo = Abc_NtkPoNum(pAppNtk);
+    int nBlock = appSmlt.GetBlockNum();
+    DASSERT(nPo <= 33, "don't support two many POs");
+    int frameCnt = 0;
+    vector <int64_t> oriOutputs(nFrame);
+    vector <int64_t> appOutputs(nFrame);
+    for (int i = 0; i < nBlock; ++i) {
+        for (int j = 0; j < 64; ++j) {
+            if (frameCnt >= nFrame)
+                break;
+            oriOutputs[frameCnt] = oriSmlt.GetOutputFast(i, j);
+            appOutputs[frameCnt] = appSmlt.GetOutputFast(i, j);
+            ++frameCnt;
+        }
+    }
+    // collect one LAC for each node
+    int64_t baseNMED = GetNMEDFast(oriOutputs, appOutputs);
+    tVec bdNode(nFrame, 0);
+    Abc_NtkForEachNode(pAppNtk, pObj, i) {
+        if (!Abc_NodeIsConst(pObj)) {
+            ReorganizeBD(bds, pObj, bdNode); // cpm[PO][obj][frameBlock] -> cpm[frame][POBlock]
+            Alexanderia_CollectNodeLACUnderNMED(pObj, appSmlt, oriOutputs, appOutputs, bdNode, sources, vMffcs, baseNMED, nodeLACs[pObj->Id], nodeLACsDup[pObj->Id], Abc_NtkObj( pAppNtkDup, i ), pAppNtkDup );
+        }
+    }
+}
+
+void SASIMI_Manager_t::Alexanderia_CollectNodeLACUnderNMED(IN Abc_Obj_t * pTS, IN Simulator_t & appSmlt, IN std::vector <int64_t> & oriOutputs, IN std::vector <int64_t> & appOutputs, IN tVec & bdNode, IN std::vector <tVec> & sources, IN std::vector <Vec_Ptr_t * > & vMffcs, IN int64_t baseNMED, OUT LAC_t & nodeLAC, OUT LAC_t & nodeLACDup, IN Abc_Obj_t * pTSDup, IN Abc_Ntk_t * pAppNtkDup)
+{
+    Abc_Ntk_t * pAppNtk = appSmlt.GetNetwork();
+    DASSERT(pAppNtk == pTS->pNtk);
+    int64_t errorBoundInt = floor(errorBound * appSmlt.GetFrameNum() * (pow(2, Abc_NtkPoNum(pAppNtk)) - 1));
+    double invDelay = Mio_LibraryReadDelayInvMax((Mio_Library_t *)Abc_FrameReadLibGen()) + 0.1;
+    int areaInv = Mio_LibraryReadAreaInv((Mio_Library_t *)Abc_FrameReadLibGen());
+    int areaBuf = Mio_LibraryReadAreaBuf((Mio_Library_t *)Abc_FrameReadLibGen());
+    nodeLAC.SetFOM(0.0);
+    nodeLACDup.SetFOM(0.0);
+
+    vector <int64_t> appOutputsNew(nFrame);
+    for (int k = 0; k < nFrame; ++k)
+        appOutputsNew[k] = appOutputs[k] ^ bdNode[k];
+
+    // consider constant replacement
+    Abc_Obj_t * pConst0 = Ckt_GetConst(pAppNtk, 0);
+    Abc_Obj_t * pConst0Dup = Ckt_GetConst(pAppNtkDup, 0);
+    pair <int64_t, int64_t> dErrors;
+    GetDNMED(appSmlt, oriOutputs, appOutputs, appOutputsNew, pTS, pConst0, dErrors);
+    if (baseNMED + dErrors.first <= errorBoundInt) {
+        double dArea = GetDArea(pTS, pConst0, vMffcs);
+        double tempFOM = dArea / (dErrors.first + 1e-10);
+        if ((dErrors.first < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.first >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+        {
+            nodeLAC.Update(pTS, pConst0, false, dErrors.first, dArea, tempFOM);
+            nodeLACDup.Update(pTSDup, pConst0Dup, false, dErrors.first, dArea, tempFOM);
+        }
+        // cout << Abc_ObjName(pTS) << ",0," << dErrors.first / static_cast <double>(appSmlt.GetFrameNum()) << ",," << dArea << endl;
+    }
+
+    Abc_Obj_t * pConst1 = Ckt_GetConst(pAppNtk, 1);
+    Abc_Obj_t * pConst1Dup = Ckt_GetConst(pAppNtkDup, 1);
+    GetDNMED(appSmlt, oriOutputs, appOutputs, appOutputsNew, pTS, pConst1, dErrors);
+    if (baseNMED + dErrors.first <= errorBoundInt) {
+        double dArea = GetDArea(pTS, pConst1, vMffcs);
+        double tempFOM = dArea / (dErrors.first + 1e-10);
+        if ((dErrors.first < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.first >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+        {
+            nodeLAC.Update(pTS, pConst1, false, dErrors.first, dArea, tempFOM);
+            nodeLACDup.Update(pTSDup, pConst1Dup, false, dErrors.first, dArea, tempFOM);
+        }
+        // cout << Abc_ObjName(pTS) << ",1," << dErrors.first / static_cast <double>(appSmlt.GetFrameNum()) << ",," << dArea << endl;
+    }
+
+    // consider other nodes' replacement
+    Abc_Obj_t * pSS= nullptr;
+    int i = 0;
+    Abc_NtkForEachNode(pAppNtk, pSS, i) {
+        if (Abc_NodeIsConst(pSS))
+            continue;
+        if (Abc_ObjLevel(pSS) > Abc_ObjLevel(pTS))
+            continue;
+        if (pTS == pSS)
+            continue;
+        DASSERT(sources[pTS->Id].size() == sources[pSS->Id].size());
+        bool isSkip = true;
+        for (int j = 0; j < static_cast <int>(sources[pTS->Id].size()); ++j) {
+            if (sources[pTS->Id][j] & sources[pSS->Id][j]) {
+                isSkip = false;
+                break;
+            }
+        }
+        if (isSkip)
+            continue;
+        if (Abc_NodeIsBuf(pTS) && Abc_ObjFanin0(pTS) == pSS)
+            continue;
+        Abc_Obj_t * pFanin = nullptr;
+        int j = 0;
+        isSkip = false;
+        Abc_ObjForEachFanin(pTS, pFanin, j) {
+            if (pFanin == pSS) {
+                isSkip = true;
+                break;
+            }
+        }
+        if (isSkip)
+            continue;
+        GetDNMED(appSmlt, oriOutputs, appOutputs, appOutputsNew, pTS, pSS, dErrors);
+        if (baseNMED + dErrors.first <= errorBoundInt || (baseNMED + dErrors.second <= errorBoundInt && Abc_ObjLevel(pTS) >= Abc_ObjLevel(pSS) +  invDelay * 1000)) {
+            double dArea = GetDArea(pTS, pSS, vMffcs);
+            if (dErrors.first <= dErrors.second) {
+                Abc_Obj_t * pFanout = nullptr;
+                int j = 0;
+                bool isPoDriver = false;
+                Abc_ObjForEachFanout(pSS, pFanout, j) {
+                    if (Abc_ObjIsPo(pFanout)) {
+                        isPoDriver = true;
+                        break;
+                    }
+                }
+                if (isPoDriver)
+                    dArea -= areaBuf;
+                double tempFOM = dArea / (dErrors.first + 1e-10);
+                if ((dErrors.first < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.first >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+                {
+                    nodeLAC.Update(pTS, pSS, false, dErrors.first, dArea, tempFOM);
+                    nodeLACDup.Update(pTSDup, Abc_NtkObj( pAppNtkDup, i ), false, dErrors.first, dArea, tempFOM);
+                }
+
+            }
+            else if (Abc_ObjLevel(pTS) >= Abc_ObjLevel(pSS) +  invDelay * 1000) {
+                dArea -= areaInv;
+                double tempFOM = dArea / (dErrors.second + 1e-10);
+                if ((dErrors.second < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.second >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+                {
+                    nodeLAC.Update(pTS, pSS, true, dErrors.second, dArea, tempFOM);
+                    nodeLACDup.Update(pTSDup, Abc_NtkObj( pAppNtkDup, i ), true, dErrors.second, dArea, tempFOM);
+                }
+            }
+        }
+    }
+
+    // consider PI replacement
+    if (Abc_NodeIsBuf(pTS) && Abc_ObjIsPi(Abc_ObjFanin0(pTS)))
+        return;
+    Abc_NtkForEachPi(pAppNtk, pSS, i) {
+        bool isSkip = true;
+        for (int j = 0; j < static_cast <int>(sources[pTS->Id].size()); ++j) {
+            if (sources[pTS->Id][j] & sources[pSS->Id][j]) {
+                isSkip = false;
+                break;
+            }
+        }
+        if (isSkip)
+            continue;
+        GetDNMED(appSmlt, oriOutputs, appOutputs, appOutputsNew, pTS, pSS, dErrors);
+        if (baseNMED + dErrors.first <= errorBoundInt || baseNMED + dErrors.second <= errorBoundInt) {
+            double dArea = GetDArea(pTS, pSS, vMffcs);
+            if (dErrors.first <= dErrors.second) {
+                dArea -= areaBuf;
+                double tempFOM = dArea / (dErrors.first + 1e-10);
+                if ((dErrors.first < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.first >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+                {
+                    nodeLAC.Update(pTS, pSS, false, dErrors.first, dArea, tempFOM);
+                    nodeLACDup.Update(pTSDup, Abc_NtkObj( pAppNtkDup, i ), false, dErrors.first, dArea, tempFOM);
+                }
+            }
+            else {
+                dArea -= areaInv;
+                double tempFOM = dArea / (dErrors.second + 1e-10);
+                if ((dErrors.second < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.second >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+                {
+                    nodeLAC.Update(pTS, pSS, true, dErrors.second, dArea, tempFOM);
+                    nodeLACDup.Update(pTSDup, Abc_NtkObj( pAppNtkDup, i ), true, dErrors.second, dArea, tempFOM);
+                }
+            }
+        }
+    }
 }

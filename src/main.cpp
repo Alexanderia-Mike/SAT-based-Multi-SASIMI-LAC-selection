@@ -1,15 +1,15 @@
-//#include "headers.h"
-//#include "cmdline.h"
-//#include "sasimi.h"
-//
-//
-//using namespace std;
-//using namespace std::filesystem;
-//using namespace cmdline;
-//
-//
-//parser Cmdline_Parser(int argc, char * argv[])
-//{
+// #include "headers.h"
+// #include "cmdline.h"
+// #include "sasimi.h"
+
+
+// using namespace std;
+// using namespace std::filesystem;
+// using namespace cmdline;
+
+
+// parser Cmdline_Parser(int argc, char * argv[])
+// {
 //    parser option;
 //    option.add <string> ("input", 'i', "original circuit file", false, "data/su/c880.blif");
 //    option.add <string> ("output", 'o', "path to output circuit files", false, "appNtk/");
@@ -20,11 +20,11 @@
 //    option.add <int>    ("maxLevel", '\0', "max TFO cut level", false, INT_MAX, range(1, INT_MAX));
 //    option.parse_check(argc, argv);
 //    return option;
-//}
-//
-//
-//int main(int argc, char * argv[])
-//{
+// }
+
+
+// int main(int argc, char * argv[])
+// {
 //    // command line parser
 //    parser option = Cmdline_Parser(argc, argv);
 //    string input = option.get <string> ("input");
@@ -34,7 +34,7 @@
 //    float errorBound = option.get <float> ("errorBound");
 //    int frameNumber = option.get <int> ("frameNumber");
 //    int maxLevel = option.get <int> ("maxLevel");
-//
+
 //    // deal with IO
 //    path inputPath(input);
 //    DASSERT(exists(inputPath));
@@ -42,10 +42,10 @@
 //    create_directory(outputPath);
 //    path outPrefix(outputPath);
 //    outPrefix += inputPath.stem().string();
-//
+
 //    // start abc
 //    Abc_Start();
-//
+
 //    // read library and circuit
 //    Abc_Frame_t * pAbc = Abc_FrameGetGlobalFrame();
 //    ostringstream command("");
@@ -60,14 +60,14 @@
 //    command << "print_stats";
 //    cout << "abc command " << command.str() << endl;
 //    DASSERT(!Cmd_CommandExecute(pAbc, command.str().c_str()));
-//
+
 //    // sasimi + vecbee
 //    Abc_Ntk_t * pNtk = Abc_FrameReadNtk(pAbc);
 //    SASIMI_Manager_t sasimiMng(pNtk, frameNumber, maxLevel, metricType, errorBound);
 //    sasimiMng.GreedySelection(pNtk, outPrefix.string());
-//
+
 //    // stop abc
 //    Abc_Stop();
-//
+
 //    return 0;
-//}
+// }
