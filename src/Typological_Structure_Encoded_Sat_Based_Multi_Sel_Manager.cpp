@@ -1,4 +1,4 @@
-#include "Sat_Based_Multi_Sel_Manager.h"
+#include "Typological_Structure_Encoded_Sat_Based_Multi_Sel_Manager.h"
 
 using namespace std::filesystem;
 static int vec_to_int( std::vector<int> vec );
@@ -669,6 +669,7 @@ SBMSM_t::transform_miter_to_cnf ()
     // transform the aig to cnf
     std::cout << "------- Transforming to CNF!" << std::endl;
     miterCnfData = Cnf_DeriveSimple( miterAigMan, 0 );  // the variable index in cnf is derived from iterating all COs, Internal nodes, CIs in the aig manager. For more details, see lines 624 ~ 630 in "src/sat/cnf/cnfWrite.c"
+    // TODO: add extra clauses for structural encoding
     nCnfVars = miterCnfData->nVars;
 
     // get PI's IDs

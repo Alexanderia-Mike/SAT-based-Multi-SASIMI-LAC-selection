@@ -40,10 +40,14 @@ class SBMSM_t
     int threshold_value;
     // sasimi manager
     SASIMI_Manager_t sasimiMng;
-    void print_candLAC( const int maximum_range );
+
+    // for structural encoding
+    std::vector<std::vector<uint64_t> > transitive_fanin_cone_matrix;
     ////////////////////////////////////////////////////////////
     ///                  helping functions                   ///
     ////////////////////////////////////////////////////////////
+    void print_candLAC( const int maximum_range );
+    int get_max_id();
   public:
     void Abc_Ntk_Dup_Level();
     SBMSM_t( IN Abc_Ntk_t * _pOriNtk, int _threshold[], SASIMI_Manager_t & _sasimiMng );
@@ -84,4 +88,7 @@ class SBMSM_t
     void transform_verify_miter_to_cnf();
     void create_subtractor_comparator_miter_from_networks( Abc_Ntk_t * pNtk1, Abc_Ntk_t * pNtk2 );
     void assign_PIIDs_for_verify_miter( Cnf_Dat_t * miterCnfData, bool print );
+
+    // for typological_encoding
+    void get_transitive_fanin_cone_using_matrix();
 };

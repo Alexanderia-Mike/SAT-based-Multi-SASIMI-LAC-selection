@@ -1269,10 +1269,10 @@ int64_t Simulator_t::GetOutputFast(int blockId, int bitId) const
     for (int k = msb; k >= lsb; --k) {
         ret <<= 1;
         Abc_Obj_t * pObj = Abc_NtkPo(pNtk, k);
-        if (GetValue(pObj, blockId, bitId))
+        if (GetValue(pObj, blockId, bitId)) 
             ++ret;
     }
-    return ret;
+    return ret; // ret 从小往大数的第 i 位表示 Output[i] 在第 blockId*nFrame + bitId 轮模拟中的值
 }
 
 
@@ -1954,6 +1954,19 @@ int64_t GetNMEDFast(std::vector <int64_t> & oriOutputs, std::vector <int64_t> & 
     for (int i = 0; i < nFrame; ++i)
         NMED += abs(oriOutputs[i] - appOutputs[i]);
     return NMED;
+}
+
+int64_t GetMaxEDFast(std::vector <int64_t> & oriOutputs, std::vector <int64_t> & appOutputs)
+{
+    DASSERT(oriOutputs.size() == appOutputs.size());
+    int nFrame = static_cast <int> (oriOutputs.size());
+    int64_t MaxED = 0;
+    for (int i = 0; i < nFrame; ++i)
+    {
+        if ( abs(oriOutputs[i] - appOutputs[i]) > MaxED )
+            MaxED = abs(oriOutputs[i] - appOutputs[i]);
+    }
+    return MaxED;
 }
 
 

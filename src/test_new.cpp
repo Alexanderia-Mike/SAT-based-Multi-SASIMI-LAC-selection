@@ -22,7 +22,7 @@ parser Cmdline_Parser(int argc, char * argv[])
     option.add <string> ("output", 'o', "path to output circuit files", false, "appNtk/");
     option.add <string> ("library", 'l', "standard cell library", false, "data/library/mcnc.genlib");
     // option.add <string> ("metricType", '\0', "error metric type, er, nmed", false, "er");
-    option.add <string> ("metricType", '\0', "error metric type, er, nmed", false, "nmed");
+    option.add <string> ("metricType", '\0', "error metric type, er, nmed, maxed, area", false, "area");
     option.add <float>  ("errorBound", 'e', "error metric upper bound", false, 0.02, range(0.0, 1.0));
     // option.add <float>  ("errorBound", 'e', "error metric upper bound", false, 0.26, range(0.0, 1.0));
     option.add <int>    ("frameNumber", 'f', "simulation round", false, 100000, range(1, INT_MAX));
@@ -39,7 +39,15 @@ int main(int argc, char * argv[])
     string input = option.get <string> ("input");
     string output = option.get <string> ("output");
     string library = option.get <string> ("library");
-    Metric_t metricType = (option.get <string> ("metricType") == "er")? Metric_t::ER: Metric_t::NMED;
+    Metric_t metricType;
+    if ( option.get <string> ("metricType") == "er" )
+        metricType = Metric_t::ER;
+    else if ( option.get <string> ("metricType") == "nmed" )
+        metricType = Metric_t::NMED;
+    else if ( option.get <string> ("metricType") == "maxed" )
+        metricType = Metric_t::MaxED;
+    else
+        metricType = Metric_t::Area;
     float errorBound = option.get <float> ("errorBound");
     int frameNumber = option.get <int> ("frameNumber");
     int maxLevel = option.get <int> ("maxLevel");
@@ -75,7 +83,7 @@ int main(int argc, char * argv[])
     char * fileName9 = "benchmarks/int2float_depth_2018.blif";
     char * fileName10 = "benchmarks/priority_depth_2018.blif";
     char * fileName11 = "benchmarks/router_depth_2018.blif";    // cannot execute, because Abc_NtkDup does some optimization
-    Abc_Ntk_t * pNtkNetlist = Io_ReadBlif( fileName10, 1 );
+    Abc_Ntk_t * pNtkNetlist = Io_ReadBlif( fileName9, 1 );
     cout << "the benchmark: " << Abc_NtkName( pNtkNetlist ) << endl << 
         "number of PIs: " << Abc_NtkPiNum( pNtkNetlist ) << endl <<
         "number of POs: " << Abc_NtkPoNum( pNtkNetlist ) << endl <<

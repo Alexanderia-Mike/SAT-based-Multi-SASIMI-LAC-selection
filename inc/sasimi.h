@@ -54,12 +54,23 @@ public:
     void Alexanderia_CollectNodeLACUnderNMED(IN Abc_Obj_t * pTS, IN Simulator_t & appSmlt, IN std::vector <int64_t> & oriOutputs, IN std::vector <int64_t> & appOutputs, IN tVec & bdNode, IN std::vector <tVec> & sources, IN std::vector <Vec_Ptr_t * > & vMffcs, IN int64_t baseNMED, OUT LAC_t & nodeLAC, OUT LAC_t & nodeLACDup, IN Abc_Obj_t * pTSDup, IN Abc_Ntk_t * pAppNtkDup);
     // sort the LACs in <nodeLACs> according to their scores and then store the results in <candLACs>
     void SortCandLACs(IN std::vector <LAC_t> & nodeLACs, IN int nFrame, OUT std::vector <LAC_t> & candLACs);
+    
+    void Alexanderia_CollectAllLACsUnderMaxED( IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, IN std::vector < std::vector <tVec> > & bds, IN std::vector <Vec_Ptr_t * > & vMffcs, OUT std::vector <LAC_t> & nodeLACs, OUT std::vector <LAC_t> & nodeLACsDup, IN Abc_Ntk_t * pAppNtkDup, IN unsigned int threshold );
+    
+    void Alexanderia_CollectNodeLACUnderMaxED(IN Abc_Obj_t * pTS, IN Simulator_t & appSmlt, IN std::vector <int64_t> & oriOutputs, IN std::vector <int64_t> & appOutputs, IN tVec & bdNode, IN std::vector <tVec> & sources, IN std::vector <Vec_Ptr_t * > & vMffcs, IN int64_t baseNMED, OUT LAC_t & nodeLAC, OUT LAC_t & nodeLACDup, IN Abc_Obj_t * pTSDup, IN Abc_Ntk_t * pAppNtkDup, IN unsigned int threshold);
+
+    void Alexanderia_CollectAllLACsUnderArea( IN Simulator_t & oriSmlt, IN Simulator_t & appSmlt, IN std::vector <Vec_Ptr_t * > & vMffcs, OUT std::vector <LAC_t> & nodeLACs, OUT std::vector <LAC_t> & nodeLACsDup, IN Abc_Ntk_t * pAppNtkDup );
+
+    void Alexanderia_CollectNodeLACUnderArea(IN Abc_Obj_t * pTS, IN Simulator_t & appSmlt, IN std::vector <tVec> & sources, IN std::vector <Vec_Ptr_t * > & vMffcs, OUT LAC_t & nodeLAC, OUT LAC_t & nodeLACDup, IN Abc_Obj_t * pTSDup, IN Abc_Ntk_t * pAppNtkDup);
+    
     // apply the best <topNum> candidates and then store the resulting circuit in "<outPrefix>_sth.blif"
     int ApplyBestLAC(Simulator_t & oriSmlt, Simulator_t & appSmlt, std::vector <LAC_t> & candLACs, int topNum, std::string outPrefix, unsigned seed);
     // get Delta Error Rate, with pTS the "target signal", and pSS the "substitute signal"
     void GetDER(IN Simulator_t & appSmlt, IN Abc_Obj_t * pTS, IN Abc_Obj_t * pSS, IN std::vector <tVec> & isERInc, IN std::vector <tVec> & isERDec, OUT std::pair <int, int> & errors);
     // get Delta Mean Error Distance
     void GetDNMED(IN Simulator_t & appSmlt, IN std::vector <int64_t> & oriOutputs, IN std::vector <int64_t> & appOutputs, IN std::vector <int64_t> & appOutputsNew, IN Abc_Obj_t * pTS, IN Abc_Obj_t * pSS, OUT std::pair <int64_t, int64_t> & dErrors);
+
+    void GetDMaxED(IN Simulator_t & appSmlt, IN std::vector <int64_t> & oriOutputs, IN std::vector <int64_t> & appOutputs, IN std::vector <int64_t> & appOutputsNew, IN Abc_Obj_t * pTS, IN Abc_Obj_t * pSS, OUT std::pair <int64_t, int64_t> & dErrors);
     // get Delta Area
     double GetDArea(Abc_Obj_t * pTS, Abc_Obj_t * pSS, std::vector <Vec_Ptr_t *> & vMffcs);
     // replace <pTS> with <pSS>, by first substituting the fanouts of <pTS> with <pSS>

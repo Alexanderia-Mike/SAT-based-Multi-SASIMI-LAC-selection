@@ -9,7 +9,7 @@
 #include "debugAssert.h"
 
 
-enum class Metric_t{ER, NMED, MRED};
+enum class Metric_t{ER, NMED, MRED, MaxED, Area};
 enum class Map_t{SCL, LUT};
 
 
@@ -123,6 +123,7 @@ double MeasureResubNMED(Simulator_t * pSmlt1, Simulator_t * pSmlt2, Abc_Obj_t * 
 double GetNMED(Simulator_t * pSmlt1, Simulator_t * pSmlt2, bool isCheck = true, bool isTmpValue = false);
 int64_t GetNMEDFast(Simulator_t * pSmlt1, Simulator_t * pSmlt2, bool isCheck = true);
 int64_t GetNMEDFast(std::vector <int64_t> & oriOutputs, std::vector <int64_t> & appOutputs);
+int64_t GetMaxEDFast(std::vector <int64_t> & oriOutputs, std::vector <int64_t> & appOutputs);
 void GetOffset(IN Simulator_t * pSmlt1, IN Simulator_t * pSmlt2, IN bool isCheck, INOUT std::vector < std::vector <int8_t> > & offsets);
 double GetNMEDFromOffset(IN std::vector < std::vector <int8_t> > & offsets);
 double MeasureER(Abc_Ntk_t * pNtk1, Abc_Ntk_t * pNtk2, int nFrame = 102400, unsigned seed = 314, bool isCheck = true);

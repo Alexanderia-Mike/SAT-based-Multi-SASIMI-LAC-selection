@@ -178,7 +178,7 @@ SBMSM_t::transform_verify_miter_to_cnf()
     // get PI's IDs
     std::cout << "------- Assigning PIIDs for Verify Miter!" << std::endl;
     OriPIIDs = (int *) realloc( OriPIIDs, ( OriPINum + 1 ) * sizeof( int ) );
-    assign_PIIDs_for_verify_miter( miterCnfData, true );
+    assign_PIIDs_for_verify_miter( miterCnfData, false );
 
     // write the cnf into the file
     std::cout << "------- Writing Miter CNF!" << std::endl;
