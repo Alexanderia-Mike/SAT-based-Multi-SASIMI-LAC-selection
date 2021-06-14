@@ -669,7 +669,6 @@ SBMSM_t::transform_miter_to_cnf ()
     // transform the aig to cnf
     std::cout << "------- Transforming to CNF!" << std::endl;
     miterCnfData = Cnf_DeriveSimple( miterAigMan, 0 );  // the variable index in cnf is derived from iterating all COs, Internal nodes, CIs in the aig manager. For more details, see lines 624 ~ 630 in "src/sat/cnf/cnfWrite.c"
-    // TODO: add extra clauses for structural encoding
     nCnfVars = miterCnfData->nVars;
 
     // get PI's IDs
@@ -677,6 +676,10 @@ SBMSM_t::transform_miter_to_cnf ()
     OriPIIDs = (int *) realloc( OriPIIDs, ( OriPINum + 1 ) * sizeof( int ) );
     MUXPIIDs = (int *) realloc( MUXPIIDs, ( MUXPINum + 1 ) * sizeof( int ) );
     assign_PIIDs( miterCnfData, false );
+    
+    // add extra clauses for structural encoding
+    miter_cnf_add_structural_clauses( miterCnfData );
+    nCnfVars = miterCnfData->nVars;
 
     // write the cnf into the file
     std::cout << "------- Writing Miter CNF!" << std::endl;
@@ -703,6 +706,10 @@ SBMSM_t::transform_miter_to_cnf_dup ( Abc_Ntk_t * pMiterDup )
     OriPIIDs = (int *) realloc( OriPIIDs, ( OriPINum + 1 ) * sizeof( int ) );
     MUXPIIDs = (int *) realloc( MUXPIIDs, ( MUXPINum + 1 ) * sizeof( int ) );
     assign_PIIDs( miterCnfData, false );
+    
+    /* add clauses for structures */
+    miter_cnf_add_structural_clauses( miterCnfData );
+    nCnfVars = miterCnfData->nVars;
 
     // write the cnf into the file
     std::cout << "-------------- Writing Miter CNF!" << std::endl;

@@ -42,12 +42,16 @@ class SBMSM_t
     SASIMI_Manager_t sasimiMng;
 
     // for structural encoding
-    std::vector<std::vector<uint64_t> > transitive_fanin_cone_matrix;
+    std::vector<std::vector<uint64_t> > transitive_fanin_cone_matrix;   
+    // Ckt_GetBit( transitive_fanin_cone_matrix[x->Id][z->Id >> 6], z->Id ) = 1 means node i have node j as its fanin
+    std::vector<std::vector<uint64_t> > LAC_priority_matrix;
     ////////////////////////////////////////////////////////////
     ///                  helping functions                   ///
     ////////////////////////////////////////////////////////////
     void print_candLAC( const int maximum_range );
     int get_max_id();
+    bool check_a_in_b_mffc( Abc_Obj_t * a, Abc_Obj_t * b );
+    void reassign_pclauses( Cnf_Dat_t * miter_cnf_data );
   public:
     void Abc_Ntk_Dup_Level();
     SBMSM_t( IN Abc_Ntk_t * _pOriNtk, int _threshold[], SASIMI_Manager_t & _sasimiMng );
@@ -91,4 +95,7 @@ class SBMSM_t
 
     // for typological_encoding
     void get_transitive_fanin_cone_using_matrix();
+    void print_transitive_fanin_cone_matrix();
+    void get_LAC_priority_factor();
+    void miter_cnf_add_structural_clauses( Cnf_Dat_t * miter_cnf_data );
 };
