@@ -99,9 +99,11 @@ SBMSM_t::SAT_Based_Multi_Selection()
     std::cout << "------- Calculating Total Recuded Area!" << std::endl;
     totalSavedArea = calculate_total_reduced_area();
     if ( totalSavedArea == -1 )
-        std::cout << "area calculation failed!" << std::endl;
+        // std::cout << "area calculation failed!" << std::endl;
+        fprintf( stderr, "area calculation failed!\n" );
     else
-        std::cout << "the area saved is " << totalSavedArea << std::endl;
+        // std::cout << "the area saved is " << totalSavedArea << std::endl;
+        fprintf( stderr, "the area saved is %f\n", totalSavedArea );
 
     // free the dynamically allocated memory
     std::cout << "------- Clearing Memory!" << std::endl;
@@ -145,6 +147,9 @@ SBMSM_t::collect_LACs()
     pAppSmlt->Input(seed);      // initialize PI for approximate simulator
     pAppSmlt->Simulate();
     std::cout << "--- getting CPM-one-cut" << std::endl;
+    /* debug begin */
+    
+    /* debug end */
     sasimiMng.GetCPMOneCut(oriSmlt, *pAppSmlt, bds);
     std::cout << "--- collecting mFFC" << std::endl;
     sasimiMng.CollectMFFC(*pAppSmlt, vMffcs);     // collect the Mffcs of the approximate simulator
@@ -744,30 +749,27 @@ SBMSM_t::calculate_total_reduced_area ()
     std::cout << "---------- calculate_total_reduced_area: applying LACs!" << std::endl;
     // get the corresponding indices in <candLACs>
     originalArea = Abc_NtkGetMappedArea( pAppNtkDup );
-    std::cout << "aha" << std::endl;
     for ( int i = 0; i < LACIndices.size(); ++i )
     {
-        std::cout << "oho" << std::endl;
         LACIndices[i] -= nCnfVars - candLACsDup.size() - 1;
         lac = candLACsDup[LACIndices[i]];
-        std::cout << "ihi" << std::endl;
         apply_lac( lac );
     }
     reducedArea = Abc_NtkGetMappedArea( pAppNtkDup );
     std::cout << "original area = " << originalArea << " ";
     std::cout << "reduced area = " << reducedArea << std::endl;
+    fprintf( stderr, "original area = %f\n", originalArea );
+    fprintf( stderr, "reduction = %f\n", reducedArea );
     return originalArea - reducedArea;
 }
 
 void 
 SBMSM_t::apply_lac ( LAC_t & lac )
 {
-    std::cout << "uhu" << std::endl;
     Abc_Obj_t * pTS, * pSS;
     bool isInv;
     pTS = lac.GetTS();
     pSS = lac.GetSS();
-    std::cout << "yoxi" << std::endl;
     if ( pTS == nullptr )
         std::cout << "bagayalu pTS" << std::endl;
     if ( pSS == nullptr )
@@ -883,6 +885,7 @@ SBMSM_t::sorted_selection_find_least ( std::vector<Abc_Obj_t *> &sortedSelection
     Aig_Man_t * miterAigMan;
     // int OriPIIDs[OriPINum+1], MUXPIIDs[MUXPINum+1];
     selectionNum = sortedSelectionSignals.size();   left = 0;   right = selectionNum - 1;
+    fprintf( stderr, "the sorting size is %d\n", right );
     for ( int i =0; i < sortedSelectionSignals.size(); ++i )
         assert( Abc_ObjRegular( sortedSelectionSignals[i] )->pNtk == pMiter );
 

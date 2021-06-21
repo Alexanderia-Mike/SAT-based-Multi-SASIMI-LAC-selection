@@ -3,7 +3,8 @@
 //
 
 #include "sasimi.h"
-#include "cnf2Depqbf.h"
+#include "typological_structure_encoded_cnf2Depqbf.h"
+#include "typological_encoding.h"
 #include "sortingNetwork.h"
 #include <fstream>
 #include <sstream>
@@ -31,6 +32,7 @@ class SBMSM_t
     // list to store cnf parameters
     int * OriPIIDs;
     int * MUXPIIDs;
+    int * structure_code_ids;
     int nCnfVars;
     // list for LACs
     std::vector <LAC_t> candLACs;        // all the candidates (more concise)
@@ -43,7 +45,7 @@ class SBMSM_t
 
     // for structural encoding
     std::vector<std::vector<uint64_t> > transitive_fanin_cone_matrix;   
-    // Ckt_GetBit( transitive_fanin_cone_matrix[x->Id][z->Id >> 6], z->Id ) = 1 means node i have node j as its fanin
+    // Ckt_GetBit( transitive_fanin_cone_matrix[x->Id][z->Id >> 6], z->Id ) = 1 means node x have node z as its fanin
     std::vector<std::vector<uint64_t> > LAC_priority_matrix;
     ////////////////////////////////////////////////////////////
     ///                  helping functions                   ///
@@ -97,5 +99,6 @@ class SBMSM_t
     void get_transitive_fanin_cone_using_matrix();
     void print_transitive_fanin_cone_matrix();
     void get_LAC_priority_factor();
+    void print_LAC_priority_factor();
     void miter_cnf_add_structural_clauses( Cnf_Dat_t * miter_cnf_data );
 };

@@ -3,6 +3,8 @@
 using namespace std::filesystem;
 static int vec_to_int( std::vector<int> vec );
 
+void Alexanderia_Cnf_DataWriteIntoFile( Cnf_Dat_t * p, char * pFileName, int fReadable, Vec_Int_t * vForAlls, Vec_Int_t * vExists );
+
 SBMSM_t::SBMSM_t( IN Abc_Ntk_t * _pOriNtk, int _threshold[], SASIMI_Manager_t & _sasimiMng )
 : pOriNtk( _pOriNtk ), sasimiMng( _sasimiMng ), pMiter( nullptr ), OriPINum( 0 ), MUXPINum( 0 )
 {
@@ -26,6 +28,7 @@ SBMSM_t::SBMSM_t( IN Abc_Ntk_t * _pOriNtk, int _threshold[], SASIMI_Manager_t & 
     // initializing cnf parameters
     OriPIIDs = (int *) malloc( 0 ); 
     MUXPIIDs = (int *) malloc( 0 );
+    structure_code_ids = (int *) malloc( 0 );
     nCnfVars = 0;
     // initializing threshold
     int size = Abc_NtkPoNum( pOriNtk );
@@ -72,6 +75,16 @@ SBMSM_t::SAT_Based_Multi_Selection()
     candLAC_truncate_size( 40 );
     // print_candLAC();
 
+    /* get the matrix about the typological information */
+    get_transitive_fanin_cone_using_matrix();
+    /* for debug purpose begin */
+    print_transitive_fanin_cone_matrix();
+    /* for debug purpose end */
+    get_LAC_priority_factor();
+    /* for debug purpose begin */
+    print_LAC_priority_factor();
+    /* for debug purpose end */
+
     // transform map to sop
     Abc_NtkMapToSop( pOriNtk );
     Abc_NtkMapToSop( pAppNtk );
@@ -91,7 +104,7 @@ SBMSM_t::SAT_Based_Multi_Selection()
     qdpll_configure (depqbf, "--incremental-use");
 
     std::cout << "------- Loading CNF to Depqbf!" << std::endl;
-    Cnf_DataFile2Depqbf( cnfFileName, depqbf, OriPIIDs, MUXPIIDs );
+    Cnf_DataFile2Depqbf( cnfFileName, depqbf, OriPIIDs, MUXPIIDs, structure_code_ids );
     std::cout << "------- Solving the Result!" << std::endl;
     QDPLLResult res = QDPLL_SolveSatWriteAssignments( depqbf, SATResultFileName );
 
@@ -677,7 +690,7 @@ SBMSM_t::transform_miter_to_cnf ()
     MUXPIIDs = (int *) realloc( MUXPIIDs, ( MUXPINum + 1 ) * sizeof( int ) );
     assign_PIIDs( miterCnfData, false );
     
-    // add extra clauses for structural encoding
+    /* add extra clauses for structural encoding */
     miter_cnf_add_structural_clauses( miterCnfData );
     nCnfVars = miterCnfData->nVars;
 
@@ -713,7 +726,89 @@ SBMSM_t::transform_miter_to_cnf_dup ( Abc_Ntk_t * pMiterDup )
 
     // write the cnf into the file
     std::cout << "-------------- Writing Miter CNF!" << std::endl;
-    Cnf_DataWriteIntoFile( miterCnfData, (char *) cnfFileNameDup, 1, NULL, NULL );  // since fReadable=1, all the variables can be read by file without any trouble.
+    Alexanderia_Cnf_DataWriteIntoFile( miterCnfData, (char *) cnfFileNameDup, 1, NULL, NULL );  // since fReadable=1, all the variables can be read by file without any trouble.
+}
+
+static inline int Cnf_Lit2Var( int Lit )        { return (Lit & 1)? -(Lit >> 1)-1 : (Lit >> 1)+1;  }
+static inline int Cnf_Lit2Var2( int Lit )       { return (Lit & 1)? -(Lit >> 1)   : (Lit >> 1);    }
+
+void Cnf_DataWriteIntoFileGz( Cnf_Dat_t * p, char * pFileName, int fReadable, Vec_Int_t * vForAlls, Vec_Int_t * vExists )
+{
+    gzFile pFile;
+    int * pLit, * pStop, i, VarId;
+    pFile = gzopen( pFileName, "wb" );
+    if ( pFile == NULL )
+    {
+        printf( "Cnf_WriteIntoFile(): Output file cannot be opened.\n" );
+        return;
+    }
+    gzprintf( pFile, "c Result of efficient AIG-to-CNF conversion using package CNF\n" );
+    gzprintf( pFile, "p cnf %d %d\n", p->nVars, p->nClauses );
+    if ( vForAlls )
+    {
+        gzprintf( pFile, "a " );
+        Vec_IntForEachEntry( vForAlls, VarId, i )
+            gzprintf( pFile, "%d ", fReadable? VarId : VarId+1 );
+        gzprintf( pFile, "0\n" );
+    }
+    if ( vExists )
+    {
+        gzprintf( pFile, "e " );
+        Vec_IntForEachEntry( vExists, VarId, i )
+            gzprintf( pFile, "%d ", fReadable? VarId : VarId+1 );
+        gzprintf( pFile, "0\n" );
+    }
+    for ( i = 0; i < p->nClauses; i++ )
+    {
+        for ( pLit = p->pClauses[i], pStop = p->pClauses[i+1]; pLit < pStop; pLit++ )
+            gzprintf( pFile, "%d ", fReadable? Cnf_Lit2Var2(*pLit) : Cnf_Lit2Var(*pLit) );
+        gzprintf( pFile, "0\n" );
+    }
+    gzprintf( pFile, "\n" );
+    gzclose( pFile );
+}
+
+void Alexanderia_Cnf_DataWriteIntoFile( Cnf_Dat_t * p, char * pFileName, int fReadable, Vec_Int_t * vForAlls, Vec_Int_t * vExists )
+{
+    FILE * pFile;
+    int * pLit, * pStop, i, VarId;
+    if ( !strncmp(pFileName+strlen(pFileName)-3,".gz",3) ) 
+    {
+        Cnf_DataWriteIntoFileGz( p, pFileName, fReadable, vForAlls, vExists );
+        return;
+    }
+    pFile = fopen( pFileName, "w" );
+    if ( pFile == NULL )
+    {
+        printf( "Cnf_WriteIntoFile(): Output file cannot be opened.\n" );
+        return;
+    }
+    std::cout << "now fprintf!" << std::endl;
+    fprintf( pFile, "c Result of efficient AIG-to-CNF conversion using package CNF\n" );
+    std::cout << "enf fprintf!" << std::endl;
+    fprintf( pFile, "p cnf %d %d\n", p->nVars, p->nClauses );
+    if ( vForAlls )
+    {
+        fprintf( pFile, "a " );
+        Vec_IntForEachEntry( vForAlls, VarId, i )
+            fprintf( pFile, "%d ", fReadable? VarId : VarId+1 );
+        fprintf( pFile, "0\n" );
+    }
+    if ( vExists )
+    {
+        fprintf( pFile, "e " );
+        Vec_IntForEachEntry( vExists, VarId, i )
+            fprintf( pFile, "%d ", fReadable? VarId : VarId+1 );
+        fprintf( pFile, "0\n" );
+    }
+    for ( i = 0; i < p->nClauses; i++ )
+    {
+        for ( pLit = p->pClauses[i], pStop = p->pClauses[i+1]; pLit < pStop; pLit++ )
+            fprintf( pFile, "%d ", fReadable? Cnf_Lit2Var2(*pLit) : Cnf_Lit2Var(*pLit) );
+        fprintf( pFile, "0\n" );
+    }
+    fprintf( pFile, "\n" );
+    fclose( pFile );
 }
 
 double 
@@ -744,6 +839,10 @@ SBMSM_t::calculate_total_reduced_area ()
         isStream >> trashBin1 >> LACIndex >> trashBin2;
         assert( trashBin1.compare( stringV ) == 0 );
         assert( trashBin2.compare( string0 ) == 0 );
+        /* if the LACIndex has exceeds the size, break */
+        if ( LACIndex > MUXPIIDs[MUXPIIDs[0]] || LACIndex < -MUXPIIDs[MUXPIIDs[0]] )
+            break;
+        /* add to the list */
         if ( LACIndex > 0 ) 
             LACIndices.push_back( LACIndex );
         isStream.clear();
@@ -752,13 +851,10 @@ SBMSM_t::calculate_total_reduced_area ()
     std::cout << "---------- calculate_total_reduced_area: applying LACs!" << std::endl;
     // get the corresponding indices in <candLACs>
     originalArea = Abc_NtkGetMappedArea( pAppNtkDup );
-    std::cout << "aha" << std::endl;
     for ( int i = 0; i < LACIndices.size(); ++i )
     {
-        std::cout << "oho" << std::endl;
         LACIndices[i] -= nCnfVars - candLACsDup.size() - 1;
         lac = candLACsDup[LACIndices[i]];
-        std::cout << "ihi" << std::endl;
         apply_lac( lac );
     }
     reducedArea = Abc_NtkGetMappedArea( pAppNtkDup );
@@ -770,12 +866,10 @@ SBMSM_t::calculate_total_reduced_area ()
 void 
 SBMSM_t::apply_lac ( LAC_t & lac )
 {
-    std::cout << "uhu" << std::endl;
     Abc_Obj_t * pTS, * pSS;
     bool isInv;
     pTS = lac.GetTS();
     pSS = lac.GetSS();
-    std::cout << "yoxi" << std::endl;
     if ( pTS == nullptr )
         std::cout << "bagayalu pTS" << std::endl;
     if ( pSS == nullptr )
@@ -933,7 +1027,7 @@ SBMSM_t::sorted_selection_find_least ( std::vector<Abc_Obj_t *> &sortedSelection
         qdpll_configure (depqbf, "--incremental-use");
 
         std::cout << "-------------- reading cnf into depqbf" << std::endl;
-        Cnf_DataFile2Depqbf( cnfFileNameDup, depqbf, OriPIIDs, MUXPIIDs );
+        Cnf_DataFile2Depqbf( cnfFileNameDup, depqbf, OriPIIDs, MUXPIIDs, structure_code_ids );
         // solve the sat and store the results into the file <SATResultFileName>.
         std::cout << "-------------- solving qsat" << std::endl;
         QDPLLResult res = qdpll_sat ( depqbf );

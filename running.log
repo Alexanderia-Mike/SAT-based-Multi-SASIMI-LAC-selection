@@ -1,0 +1,540 @@
+abc command read data/library/mcnc.genlib
+Entered genlib library with 23 gates from file "data/library/mcnc.genlib".
+abc command read_blif in/Alexanderia_test_input.blif
+abc command print_stats
+[1;37mtest_strash                   :[0m i/o =    4/    2  lat =    0  nd =     5  edge =      8  cube =     5  lev = 4
+the initial area is 9
+abc command balance; rewrite; refactor; balance; rewrite; rewrite -z; balance; refactor -z; rewrite -z; balance
+new area is 9
+the final area is 9
+the network functionality is 3, and the network type is 3
+the total area: 9
+the network functionality is 4, and the network type is 2
+hey here
+--- seed = 3927512475
+--- getting CPM-one-cut
+the number of nodes is 14
+--- collecting mFFC
+--- collecting LACs
+--- sorting LACs
+--- the number of candidate LACs is 5
+# Creating MUXed CNF! ------------------------------ 
+------- Adding MUX!
+-------------- 1 (out of 5) MUXes finished
+-------------- 2 (out of 5) MUXes finished
+-------------- 3 (out of 5) MUXes finished
+-------------- 4 (out of 5) MUXes finished
+-------------- 5 (out of 5) MUXes finished
+------- Strashing Original and MUXed Network!
+------- Creating Miter!
+------- Writing Miter Blif!
+-------------- Miter is created successfully!
+-------------- the number of PI in original network is 4
+-------------- the number of PI in miter is 9
+------- Adding Sorting Network!
+the reduced area of all LAC candidates are listed as follows:
+DArea: 3 mapped_area:3 DError0 FOM: 3e+10 SS name: a, TS name: n9
+DArea: 3 mapped_area:3 DError0 FOM: 3e+10 SS name: b, TS name: n11
+DArea: 2 mapped_area:2 DError0 FOM: 2e+10 SS name: a, TS name: n8
+DArea: 1 mapped_area:1 DError0 FOM: 1 SS name: n12, TS name: n7
+DArea: 1 mapped_area:1 DError0 FOM: 1 SS name: n12, TS name: n10
+
+------- Choosing the Least Valid Selection Signal!
+----------- initial condition: left = 0; right = 9
+----------- 1 round: left = 0; right = 9; pointer = 4
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =     9  po =     1  and =      75  lev =  17
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat
+-------------- updating boundaries
+-------------- UNSAT! updating left pointer
+----------- 2 round: left = 5; right = 9; pointer = 7
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =     9  po =     1  and =      75  lev =  17
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat
+-------------- updating boundaries
+-------------- SAT! updating right pointer
+----------- 3 round: left = 5; right = 6; pointer = 5
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =     9  po =     1  and =      75  lev =  17
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat
+-------------- updating boundaries
+-------------- SAT! updating right pointer
+---------- The least index of the valid selection signal is: 5
+------- ANDing the Selection Signal with the Original Output!
+------- Transforming to AIG!
+---------- intermediate-results/Alexanderia_Final_Miter_AIG : pi =     9  po =     1  and =      75  lev =  17
+------- Transforming to CNF!
+------- Assigning PIIDs!
+------- Writing Miter CNF!
+# Solving Quantified SAT Problem! ------------------------------ 
+------- Loading CNF to Depqbf!
+------- Solving the Result!
+---------- SAT!
+The solution is:
+s cnf 1 85 227
+------- Calculating Total Recuded Area!
+---------- calculate_total_reduced_area: reading the file!
+---------- calculate_total_reduced_area: applying LACs!
+aha
+oho
+ihi
+uhu
+yoxi
+n9 is replaced by a
+oho
+ihi
+uhu
+yoxi
+original area = 9 reduced area = 5
+------- Clearing Memory!
+------- Begin Verify!
+------- Strashing Networks!
+------- Creating Verify Miter!
+------- Writing Verify Miter Blif!
+-------------- Verify Miter is created successfully!
+------- Transforming to AIG!
+---------- intermediate-results/Alexanderia_Final_Miter_AIG : pi =     4  po =     1  and =      18  lev =  11
+------- Transforming to CNF!
+------- Assigning PIIDs for Verify Miter!
+------- Writing Miter CNF!
+# Solving Quantified SAT Problem! ------------------------------ 
+------- Loading CNF to Depqbf!
+------- Solving the Result!
+---------- SAT!
+The solution is:
+s cnf 1 23 56
+verify succeeds
+------- Clearing Memory!
+abc command read data/library/mcnc.genlib
+Entered genlib library with 23 gates from file "data/library/mcnc.genlib".
+abc command read_blif benchmarks/int2float_depth_2018.blif
+abc command print_stats
+[1;37mtop                           :[0m i/o =   11/    7  lat =    0  nd =    27  edge =    144  cube =   111  lev = 3
+the initial area is 429
+abc command balance; rewrite; refactor; balance; rewrite; rewrite -z; balance; refactor -z; rewrite -z; balance
+new area is 409
+abc command balance; rewrite; refactor; balance; rewrite; rewrite -z; balance; refactor -z; rewrite -z; balance
+new area is 409
+the final area is 409
+the network functionality is 3, and the network type is 3
+the total area: 409
+the network functionality is 4, and the network type is 2
+hey here
+--- seed = 2416422891
+--- getting CPM-one-cut
+the number of nodes is 180
+--- collecting mFFC
+--- collecting LACs
+--- sorting LACs
+--- the number of candidate LACs is 159
+# Creating MUXed CNF! ------------------------------ 
+------- Adding MUX!
+-------------- 4 (out of 40) MUXes finished
+-------------- 8 (out of 40) MUXes finished
+-------------- 13 (out of 40) MUXes finished
+-------------- 18 (out of 40) MUXes finished
+-------------- 22 (out of 40) MUXes finished
+-------------- 27 (out of 40) MUXes finished
+-------------- 32 (out of 40) MUXes finished
+-------------- 37 (out of 40) MUXes finished
+------- Strashing Original and MUXed Network!
+------- Creating Miter!
+------- Writing Miter Blif!
+-------------- Miter is created successfully!
+-------------- the number of PI in original network is 11
+-------------- the number of PI in miter is 51
+------- Adding Sorting Network!
+the reduced area of all LAC candidates are listed as follows:
+DArea: 85 mapped_area:20 DError0 FOM: 8.5e+11 SS name: pi00, TS name: n130
+DArea: 77 mapped_area:19 DError0 FOM: 7.7e+11 SS name: pi00, TS name: n94
+DArea: 72 mapped_area:17 DError0 FOM: 7.2e+11 SS name: pi00, TS name: n123
+DArea: 69 mapped_area:17 DError0 FOM: 6.9e+11 SS name: pi00, TS name: n57
+DArea: 63 mapped_area:15 DError0 FOM: 6.3e+11 SS name: pi00, TS name: n160
+DArea: 54 mapped_area:13 DError0 FOM: 5.4e+11 SS name: pi00, TS name: n116
+DArea: 44 mapped_area:11 DError0 FOM: 4.4e+11 SS name: pi00, TS name: n93
+DArea: 41 mapped_area:10 DError0 FOM: 4.1e+11 SS name: pi00, TS name: n42
+DArea: 37 mapped_area:9 DError0 FOM: 3.7e+11 SS name: pi00, TS name: n174
+DArea: 36 mapped_area:9 DError0 FOM: 3.6e+11 SS name: pi00, TS name: n41
+DArea: 26 mapped_area:7 DError0 FOM: 2.6e+11 SS name: pi04, TS name: n75
+DArea: 23 mapped_area:6 DError0 FOM: 2.3e+11 SS name: pi04, TS name: n56
+DArea: 20 mapped_area:5 DError0 FOM: 2e+11 SS name: pi02, TS name: n173
+DArea: 19 mapped_area:5 DError0 FOM: 1.9e+11 SS name: pi00, TS name: n40
+DArea: 18 mapped_area:5 DError0 FOM: 1.8e+11 SS name: pi00, TS name: n151
+DArea: 17 mapped_area:4 DError0 FOM: 1.7e+11 SS name: pi02, TS name: n92
+DArea: 17 mapped_area:4 DError0 FOM: 1.7e+11 SS name: pi00, TS name: n111
+DArea: 16 mapped_area:4 DError0 FOM: 1.6e+11 SS name: pi00, TS name: n159
+DArea: 15 mapped_area:4 DError0 FOM: 1.5e+11 SS name: pi00, TS name: n146
+DArea: 15 mapped_area:4 DError0 FOM: 1.5e+11 SS name: pi03, TS name: n122
+DArea: 14 mapped_area:4 DError0 FOM: 1.4e+11 SS name: pi02, TS name: n30
+DArea: 14 mapped_area:4 DError0 FOM: 1.4e+11 SS name: pi04, TS name: n69
+DArea: 13 mapped_area:4 DError0 FOM: 1.3e+11 SS name: pi00, TS name: n165
+DArea: 13 mapped_area:4 DError0 FOM: 1.3e+11 SS name: pi00, TS name: n158
+DArea: 12 mapped_area:3 DError0 FOM: 1.2e+11 SS name: pi04, TS name: n55
+DArea: 12 mapped_area:3 DError0 FOM: 1.2e+11 SS name: pi00, TS name: n103
+DArea: 12 mapped_area:3 DError0 FOM: 1.2e+11 SS name: pi01, TS name: n85
+DArea: 11 mapped_area:3 DError0 FOM: 1.1e+11 SS name: pi02, TS name: n134
+DArea: 10 mapped_area:3 DError0 FOM: 1e+11 SS name: pi00, TS name: n80
+DArea: 10 mapped_area:3 DError0 FOM: 1e+11 SS name: pi01, TS name: n115
+DArea: 10 mapped_area:3 DError0 FOM: 1e+11 SS name: pi05, TS name: n129
+DArea: 9 mapped_area:3 DError0 FOM: 9e+10 SS name: pi01, TS name: n84
+DArea: 9 mapped_area:3 DError0 FOM: 9e+10 SS name: pi01, TS name: n110
+DArea: 9 mapped_area:3 DError0 FOM: 9e+10 SS name: pi06, TS name: n74
+DArea: 9 mapped_area:3 DError0 FOM: 9e+10 SS name: pi00, TS name: n37
+DArea: 8 mapped_area:2 DError0 FOM: 8e+10 SS name: pi00, TS name: n98
+DArea: 8 mapped_area:2 DError0 FOM: 8e+10 SS name: pi02, TS name: n169
+DArea: 8 mapped_area:2 DError0 FOM: 8e+10 SS name: pi02, TS name: n177
+DArea: 7 mapped_area:2 DError0 FOM: 7e+10 SS name: pi00, TS name: n142
+DArea: 7 mapped_area:2 DError0 FOM: 7e+10 SS name: pi02, TS name: n139
+
+------- Choosing the Least Valid Selection Signal!
+----------- initial condition: left = 0; right = 246
+----------- 1 round: left = 0; right = 246; pointer = 123
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =    51  po =     1  and =    5545  lev =  40
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat
+-------------- updating boundaries
+-------------- UNSAT! updating left pointer
+----------- 2 round: left = 124; right = 246; pointer = 185
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =    51  po =     1  and =    5253  lev =  40
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat
+-------------- updating boundaries
+-------------- SAT! updating right pointer
+----------- 3 round: left = 124; right = 184; pointer = 154
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =    51  po =     1  and =    5441  lev =  40
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat
+-------------- updating boundaries
+-------------- SAT! updating right pointer
+----------- 4 round: left = 124; right = 153; pointer = 138
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =    51  po =     1  and =    5517  lev =  40
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat
+-------------- updating boundaries
+-------------- SAT! updating right pointer
+----------- 5 round: left = 124; right = 137; pointer = 130
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =    51  po =     1  and =    5545  lev =  40
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat
+-------------- updating boundaries
+-------------- UNSAT! updating left pointer
+----------- 6 round: left = 131; right = 137; pointer = 134
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =    51  po =     1  and =    5533  lev =  40
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat
+-------------- updating boundaries
+-------------- SAT! updating right pointer
+----------- 7 round: left = 131; right = 133; pointer = 132
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =    51  po =     1  and =    5541  lev =  40
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat
+-------------- updating boundaries
+-------------- UNSAT! updating left pointer
+----------- 8 round: left = 133; right = 133; pointer = 133
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =    51  po =     1  and =    5533  lev =  40
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat
+-------------- updating boundaries
+-------------- SAT! updating right pointer
+---------- The least index of the valid selection signal is: 133
+------- ANDing the Selection Signal with the Original Output!
+------- Transforming to AIG!
+---------- intermediate-results/Alexanderia_Final_Miter_AIG : pi =    51  po =     1  and =    5533  lev =  40
+------- Transforming to CNF!
+------- Assigning PIIDs!
+------- Writing Miter CNF!
+# Solving Quantified SAT Problem! ------------------------------ 
+------- Loading CNF to Depqbf!
+------- Solving the Result!
+---------- SAT!
+The solution is:
+s cnf 1 5585 16601
+------- Calculating Total Recuded Area!
+---------- calculate_total_reduced_area: reading the file!
+---------- calculate_total_reduced_area: applying LACs!
+aha
+oho
+ihi
+uhu
+yoxi
+n94 is replaced by pi00
+oho
+ihi
+uhu
+yoxi
+n57 is replaced by pi00
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+oho
+ihi
+uhu
+yoxi
+original area = 409 reduced area = 256
+------- Clearing Memory!
+------- Begin Verify!
+------- Strashing Networks!
+------- Creating Verify Miter!
+------- Writing Verify Miter Blif!
+-------------- Verify Miter is created successfully!
+------- Transforming to AIG!
+---------- intermediate-results/Alexanderia_Final_Miter_AIG : pi =    11  po =     1  and =     279  lev =  25
+------- Transforming to CNF!
+------- Assigning PIIDs for Verify Miter!
+------- Writing Miter CNF!
+# Solving Quantified SAT Problem! ------------------------------ 
+------- Loading CNF to Depqbf!
+------- Solving the Result!
+---------- SAT!
+The solution is:
+s cnf 1 291 839
+verify succeeds
+------- Clearing Memory!
+abc command read data/library/mcnc.genlib
+Entered genlib library with 23 gates from file "data/library/mcnc.genlib".
+abc command read_blif benchmarks/priority_depth_2018.blif
+abc command print_stats
+[1;37mtop                           :[0m i/o =  128/    8  lat =    0  nd =   151  edge =    722  cube =   277  lev = 4
+the initial area is 1143
+abc command balance; rewrite; refactor; balance; rewrite; rewrite -z; balance; refactor -z; rewrite -z; balance
+new area is 1179
+the final area is 1179
+the network functionality is 3, and the network type is 3
+the total area: 1179
+the network functionality is 4, and the network type is 2
+hey here
+--- seed = 3788988518
+--- getting CPM-one-cut
+the number of nodes is 668
+--- collecting mFFC
+--- collecting LACs
+--- sorting LACs
+--- the number of candidate LACs is 529
+# Creating MUXed CNF! ------------------------------ 
+------- Adding MUX!
+-------------- 4 (out of 40) MUXes finished
+-------------- 8 (out of 40) MUXes finished
+-------------- 13 (out of 40) MUXes finished
+-------------- 18 (out of 40) MUXes finished
+-------------- 22 (out of 40) MUXes finished
+-------------- 27 (out of 40) MUXes finished
+-------------- 32 (out of 40) MUXes finished
+-------------- 37 (out of 40) MUXes finished
+------- Strashing Original and MUXed Network!
+------- Creating Miter!
+------- Writing Miter Blif!
+-------------- Miter is created successfully!
+-------------- the number of PI in original network is 128
+-------------- the number of PI in miter is 168
+------- Adding Sorting Network!
+the reduced area of all LAC candidates are listed as follows:
+DArea: 307 mapped_area:20 DError0 FOM: 3.07e+12 SS name: pi001, TS name: n347
+DArea: 203 mapped_area:14 DError0 FOM: 2.03e+12 SS name: pi002, TS name: n488
+DArea: 201 mapped_area:14 DError0 FOM: 2.01e+12 SS name: pi001, TS name: n279
+DArea: 164 mapped_area:11 DError0 FOM: 1.64e+12 SS name: pi001, TS name: n253
+DArea: 158 mapped_area:11 DError0 FOM: 1.58e+12 SS name: pi002, TS name: n455
+DArea: 138 mapped_area:9 DError0 FOM: 1.38e+12 SS name: pi002, TS name: n441
+DArea: 133 mapped_area:9 DError0 FOM: 1.33e+12 SS name: pi001, TS name: n227
+DArea: 107 mapped_area:7 DError0 FOM: 1.07e+12 SS name: pi002, TS name: n420
+DArea: 89 mapped_area:6 DError0 FOM: 8.9e+11 SS name: pi001, TS name: n200
+DArea: 83 mapped_area:6 DError0 FOM: 8.3e+11 SS name: pi004, TS name: n575
+DArea: 77 mapped_area:6 DError0 FOM: 7.7e+11 SS name: pi002, TS name: n398
+DArea: 50 mapped_area:4 DError0 FOM: 5e+11 SS name: pi096, TS name: n346
+DArea: 47 mapped_area:4 DError0 FOM: 4.7e+11 SS name: pi001, TS name: n171
+DArea: 45 mapped_area:3 DError0 FOM: 4.5e+11 SS name: pi004, TS name: n569
+DArea: 44 mapped_area:3 DError0 FOM: 4.4e+11 SS name: pi016, TS name: n632
+DArea: 41 mapped_area:3 DError0 FOM: 4.1e+11 SS name: pi016, TS name: n631
+DArea: 41 mapped_area:3 DError0 FOM: 4.1e+11 SS name: pi008, TS name: n604
+DArea: 37 mapped_area:3 DError0 FOM: 3.7e+11 SS name: pi002, TS name: n374
+DArea: 35 mapped_area:3 DError0 FOM: 3.5e+11 SS name: pi000, TS name: n665
+DArea: 34 mapped_area:3 DError0 FOM: 3.4e+11 SS name: pi070, TS name: n278
+DArea: 32 mapped_area:3 DError0 FOM: 3.2e+11 SS name: pi085, TS name: n311
+DArea: 31 mapped_area:3 DError0 FOM: 3.1e+11 SS name: pi004, TS name: n557
+DArea: 28 mapped_area:2 DError0 FOM: 2.8e+11 SS name: pi008, TS name: n592
+DArea: 26 mapped_area:2 DError0 FOM: 2.6e+11 SS name: pi020, TS name: n191
+DArea: 25 mapped_area:2 DError0 FOM: 2.5e+11 SS name: pi096, TS name: n345
+DArea: 24 mapped_area:2 DError0 FOM: 2.4e+11 SS name: pi004, TS name: n544
+DArea: 21 mapped_area:2 DError0 FOM: 2.1e+11 SS name: pi008, TS name: n589
+DArea: 21 mapped_area:2 DError0 FOM: 2.1e+11 SS name: pi004, TS name: n543
+DArea: 20 mapped_area:2 DError0 FOM: 2e+11 SS name: pi045, TS name: n226
+DArea: 20 mapped_area:2 DError0 FOM: 2e+11 SS name: pi100, TS name: n487
+DArea: 19 mapped_area:2 DError0 FOM: 1.9e+11 SS name: pi064, TS name: n620
+DArea: 19 mapped_area:2 DError0 FOM: 1.9e+11 SS name: pi065, TS name: n252
+DArea: 18 mapped_area:2 DError0 FOM: 1.8e+11 SS name: pi000, TS name: n664
+DArea: 18 mapped_area:2 DError0 FOM: 1.8e+11 SS name: pi008, TS name: n588
+DArea: 18 mapped_area:2 DError0 FOM: 1.8e+11 SS name: pi016, TS name: n630
+DArea: 17 mapped_area:2 DError0 FOM: 1.7e+11 SS name: pi088, TS name: n516
+DArea: 17 mapped_area:2 DError0 FOM: 1.7e+11 SS name: pi000, TS name: n663
+DArea: 17 mapped_area:2 DError0 FOM: 1.7e+11 SS name: pi084, TS name: n454
+DArea: 17 mapped_area:2 DError0 FOM: 1.7e+11 SS name: pi095, TS name: n310
+DArea: 17 mapped_area:2 DError0 FOM: 1.7e+11 SS name: pi024, TS name: n386
+
+------- Choosing the Least Valid Selection Signal!
+----------- initial condition: left = 0; right = 183
+----------- 1 round: left = 0; right = 183; pointer = 91
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =   168  po =     1  and =    4588  lev =  50
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat
+-------------- updating boundaries
+-------------- SAT! updating right pointer
+----------- 2 round: left = 0; right = 90; pointer = 45
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =   168  po =     1  and =    4400  lev =  50
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat

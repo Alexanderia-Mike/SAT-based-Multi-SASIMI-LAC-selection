@@ -20,12 +20,13 @@ SBMSM_t::get_transitive_fanin_cone_using_matrix()
 
     /* resize <transitive_fanin_cone_matrix> to the correct size */
     transitive_fanin_cone_matrix.resize( max_id + 1 );
-    Abc_NtkForEachObj( pAppNtk, pObj, i )
-        transitive_fanin_cone_matrix[pObj->Id].resize( object_num_div_64, 0 );
+    for ( i = 0; i < transitive_fanin_cone_matrix.size(); ++i )
+    // Abc_NtkForEachObj( pAppNtk, pObj, i )
+        transitive_fanin_cone_matrix[i].resize( object_num_div_64, 0 );
     
     /* set PIs as 1 */
     Abc_NtkForEachPi( pAppNtk, pPI, i )
-        Ckt_SetBit( transitive_fanin_cone_matrix[pObj->Id][pPI->Id >> 6], pPI->Id );   // transitive_fanin_cone_matrix[pObj->Id][i/64] 的第 i%64 位设置成 1
+        Ckt_SetBit( transitive_fanin_cone_matrix[pPI->Id][pPI->Id >> 6], pPI->Id );   // transitive_fanin_cone_matrix[pObj->Id][i/64] 的第 i%64 位设置成 1
 
     /* updating all the transitive fanin cones in DFS order */
     Vec_Ptr_t * vNodes = Abc_NtkDfs( pAppNtk, 0 );
@@ -59,11 +60,12 @@ SBMSM_t::print_transitive_fanin_cone_matrix()
     {
         cout << "print_transitive_fanin_cone_matrix: empty matrix!" << endl;
     }
+    cout << "now printing the transitive fanin cone matrix!" << endl;
     for ( int i = 0; i < transitive_fanin_cone_matrix.size(); ++i )
     {
-        for ( int j = 0; j < transitive_fanin_cone_matrix[i].size(); ++j )
+        for ( int j = 0; j < transitive_fanin_cone_matrix.size(); ++j )
         {
-            cout << transitive_fanin_cone_matrix[i][j] << " " << endl;
+            cout << Ckt_GetBit( transitive_fanin_cone_matrix[i][j>>6], j ) << " ";
         }
         cout << endl;
     }
@@ -88,8 +90,7 @@ void
 SBMSM_t::get_LAC_priority_factor()
 {
     /* declarations */
-    int k;
-    Abc_Obj_t * pObj, * x, * y, * z, * w;
+    Abc_Obj_t * x, * y, * z, * w;
     bool z_in_x_mffc = false, w_in_x_mffc = false, z_in_y_mffc = false, w_in_y_mffc = false;
 
     if ( candLACs.empty() )
@@ -135,6 +136,24 @@ SBMSM_t::get_LAC_priority_factor()
     }
 }
 
+void 
+SBMSM_t::print_LAC_priority_factor()
+{
+    if ( LAC_priority_matrix.empty() )
+    {
+        cout << "print_LAC_priority_factor: empty matrix!" << endl;
+    }
+    cout << "now printing the LAC priority matrix!" << endl;
+    for ( int i = 0; i < LAC_priority_matrix.size(); ++i )
+    {
+        for ( int j = 0; j < LAC_priority_matrix.size(); ++j )
+        {
+            cout << Ckt_GetBit( LAC_priority_matrix[i][j>>6], j ) << " ";
+        }
+        cout << endl;
+    }
+}
+
 bool 
 SBMSM_t::check_a_in_b_mffc( Abc_Obj_t * a, Abc_Obj_t * b )
 {
@@ -146,6 +165,15 @@ SBMSM_t::check_a_in_b_mffc( Abc_Obj_t * a, Abc_Obj_t * b )
     /* begin check */
     b_mffc = Vec_PtrAlloc(100);
     Abc_NodeDeref_rec( b );
+    /* when b is not a node, use different strategies to deal with that */
+    if ( Abc_ObjIsPi( b ) )
+        return false;
+    if ( Abc_ObjIsPo( b ) )
+    {
+        Abc_Obj_t * pOutFanin = Abc_ObjFanin0( b );
+        return check_a_in_b_mffc( a, pOutFanin );
+    }
+    /* get the mffc only when b is a node */
     Abc_NodeMffcConeSupp( b, b_mffc, nullptr );
     Abc_NodeRef_rec( b );
     Vec_PtrForEachEntry( Abc_Obj_t *, b_mffc, pObj, k )
@@ -170,6 +198,7 @@ SBMSM_t::miter_cnf_add_structural_clauses( Cnf_Dat_t * miter_cnf_data )
     unsigned int LAC_num = candLACs.size();
     unsigned int var_for_cij;
     unsigned int out_var;
+    unsigned int count = 1;
     int * pLits, ** pClas;
 
     /* count zeros in LAC_priority_matrix */
@@ -182,6 +211,10 @@ SBMSM_t::miter_cnf_add_structural_clauses( Cnf_Dat_t * miter_cnf_data )
             c_i_j_zero_num ++;
         }
     }
+
+    /* assign cnf variable ids for structure codes */
+    structure_code_ids = (int *) realloc( structure_code_ids, ( c_i_j_zero_num + 1 ) * sizeof( int ) );
+    structure_code_ids[0] = c_i_j_zero_num;
 
     /* store some important old values for parameters */
     unsigned int original_nVars     = miter_cnf_data->nVars;
@@ -210,7 +243,8 @@ SBMSM_t::miter_cnf_add_structural_clauses( Cnf_Dat_t * miter_cnf_data )
         {
             if ( Ckt_GetBit( LAC_priority_matrix[i][j >> 6], j ) )
                 continue;
-            miter_cnf_data->pVarNums[var_for_cij++] = original_nVars++;
+            miter_cnf_data->pVarNums[var_for_cij++] = original_nVars++; // yeah no need to add one first. it's correct
+            structure_code_ids[count++] = original_nVars;
         }
     }
     assert( miter_cnf_data->nVars == original_nVars );

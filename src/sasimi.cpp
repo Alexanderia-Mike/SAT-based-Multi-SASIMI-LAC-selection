@@ -163,6 +163,12 @@ void SASIMI_Manager_t::GetCPMOneCut(IN Simulator_t & oriSmlt, IN Simulator_t & a
     // check
     Abc_Ntk_t * pOriNtk = oriSmlt.GetNetwork();
     Abc_Ntk_t * pAppNtk = appSmlt.GetNetwork();
+
+    /* debug begin */
+    // Io_Write( pAppNtk, "intermediate-results/debug-1.blif", IO_FILE_BLIF );
+    Ckt_WriteBlif( pAppNtk, "intermediate-results/debug-1.blif" );
+    /* debug end */
+
     DASSERT(pOriNtk != pAppNtk);
     DASSERT(SmltChecker(&oriSmlt, &appSmlt));
     // get 1-cuts and the corresponding networks

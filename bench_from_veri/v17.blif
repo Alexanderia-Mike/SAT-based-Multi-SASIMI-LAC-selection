@@ -1,0 +1,17 @@
+# Benchmark "c17" written by ABC on Mon Jun 21 12:31:44 2021
+.model c17
+.inputs N1 N2 N3 N6 N7
+.outputs N22 N23
+.names N1 N3 new_N10_
+11 0
+.names N3 N6 new_N11_
+11 0
+.names N2 new_N11_ new_N16_
+11 0
+.names new_N11_ N7 new_N19_
+11 0
+.names new_N10_ new_N16_ N22
+11 0
+.names new_N16_ new_N19_ N23
+11 0
+.end

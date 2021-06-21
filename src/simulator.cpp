@@ -257,36 +257,50 @@ void Simulator_t::SimulateOneCutNtks()
     bdOneCuts.resize(maxId + 1);
     bdCuts.resize(maxId + 1);
     Abc_NtkForEachNode(pNtk, pObj, i) {
+        cout << Abc_ObjName( pObj ) << endl;
         if (!Abc_NodeIsConst(pObj)) {
+            cout << "not constant" << endl;
             // flip the node
             for (int j = 0; j < nBlock; ++j) {
                 tmpValues[pObj->Id][j] = ~values[pObj->Id][j];
                 // cout << "filp " << Abc_ObjName(pObj) << "," << values[pObj->Id][j] << "," << tmpValues[pObj->Id][j] << endl;
             }
+            cout << "1111" << endl;
             // simulate
             Abc_NtkIncrementTravId(pNtk);
+            cout << "2222" << endl;
             Abc_NodeSetTravIdCurrent(pObj);
+            cout << "3333" << endl;
             for (auto & pInner: cutNtks[pObj->Id])
                 Abc_NodeSetTravIdCurrent(pInner);
+            cout << "4444" << endl;
             if (Abc_NtkIsAigLogic(pNtk)) {
+                cout << "is aig logic" << endl;
                 for (auto & pInner: cutNtks[pObj->Id])
                     UpdateAigObjCutNtk(pInner);
+                cout << "5555" << endl;
             }
             else if (Abc_NtkIsSopLogic(pNtk)) {
+                cout << "is sop logic" << endl;
                 for (auto & pInner: cutNtks[pObj->Id])
                     UpdateSopObjCutNtk(pInner);
+                cout << "6666" << endl;
             }
             else if (Abc_NtkIsMappedLogic(pNtk)) {
+                cout << "is mapped logic" << endl;
                 for (auto & pInner: cutNtks[pObj->Id]) {
+                    cout << "aha" << endl;
                     UpdateMapObjCutNtk(pInner);
                     // cout << Abc_ObjName(pInner) << " old value " << values[pInner->Id][0] << " new value " << tmpValues[pInner->Id][0] << endl;
                 }
+                cout << "7777" << endl;
             }
             else
                 DASSERT(0);
 
             // get boolean difference from the node to its one cuts
             int nPo = Abc_NtkPoNum(pNtk);
+            cout << "8888" << endl;
             bdOneCuts[pObj->Id].resize(nPo);
             for (int j = 0; j < nPo; ++j) {
                 if (Ckt_GetBit(sinks[pObj->Id][j >> 6], static_cast <uint64_t> (j) & static_cast <uint64_t> (63))) {
@@ -300,6 +314,7 @@ void Simulator_t::SimulateOneCutNtks()
                     }
                 }
             }
+            cout << "9999" << endl;
 
             int cutSize = static_cast <int >(tfoCuts[pObj->Id].size());
             bdCuts[pObj->Id].resize(cutSize);
@@ -310,7 +325,11 @@ void Simulator_t::SimulateOneCutNtks()
                     bdCuts[pObj->Id][j][k] = values[pCutNode->Id][k] ^ tmpValues[pCutNode->Id][k];
                 ++j;
             }
-
+            cout << "0000" << endl;
+        }
+        else
+        {
+            cout << "constant" << endl;
         }
     }
 }
@@ -772,6 +791,7 @@ void Simulator_t::UpdateMapObjCutNtk(Abc_Obj_t * pObj)
     DASSERT(!Abc_ObjIsPi(pObj));
     DASSERT(!Abc_NodeIsConst(pObj));
     if (Abc_ObjIsPo(pObj)) {
+        cout << "is po" << endl;
         Abc_Obj_t * pDriver = Abc_ObjFanin0(pObj);
         if (Abc_NodeIsTravIdCurrent(pDriver))
             tmpValues[pObj->Id].assign(tmpValues[pDriver->Id].begin(), tmpValues[pDriver->Id].end());
@@ -779,12 +799,22 @@ void Simulator_t::UpdateMapObjCutNtk(Abc_Obj_t * pObj)
             tmpValues[pObj->Id].assign(values[pDriver->Id].begin(), values[pDriver->Id].end());
         return;
     }
+    else
+    {
+        cout << "not po" << endl;
+    }
+    cout << "111111" << endl;
     // update sop
+    cout << "pobj = " << pObj << endl;
+    cout << "pobj->pdata = " << pObj->pData << endl;
     char * pSop = static_cast <char *> ((static_cast <Mio_Gate_t *> (pObj->pData))->pSop);
+    cout << "666666" << endl;
     int nVars = Abc_SopGetVarNum(pSop);
+    cout << "777777" << endl;
     vector <uint64_t> product(nBlock);
     for (char * pCube = pSop; *pCube; pCube += nVars + 3) {
         bool isFirst = true;
+        cout << "333333" << endl;
         for (int i = 0; pCube[i] != ' '; i++) {
             Abc_Obj_t * pFanin = Abc_ObjFanin(pObj, i);
             tVec & valueFi = Abc_NodeIsTravIdCurrent(pFanin)? tmpValues[pFanin->Id]: values[pFanin->Id];
@@ -818,12 +848,14 @@ void Simulator_t::UpdateMapObjCutNtk(Abc_Obj_t * pObj)
                     DASSERT(0);
             }
         }
+        cout << "444444" << endl;
         if (isFirst) {
             isFirst = false;
             for (int k = 0; k < nBlock; ++k)
                 product[k] = static_cast <uint64_t> (ULLONG_MAX);
         }
         DASSERT(!isFirst);
+        cout << "555555" << endl;
         if (pCube == pSop) {
             tmpValues[pObj->Id].assign(product.begin(), product.end());
         }
@@ -832,6 +864,7 @@ void Simulator_t::UpdateMapObjCutNtk(Abc_Obj_t * pObj)
                 tmpValues[pObj->Id][k] |= product[k];
         }
     }
+    cout << "222222" << endl;
 
     // complement
     if (Abc_SopIsComplement(pSop)) {

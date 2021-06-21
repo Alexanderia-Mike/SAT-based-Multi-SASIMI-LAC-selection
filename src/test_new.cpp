@@ -14,6 +14,10 @@ extern "C" {
 Abc_Ntk_t * Abc_NtkMap( Abc_Ntk_t * pNtk, double DelayTarget, double AreaMulti, double DelayMulti, float LogFan, float Slew, float Gain, int nGatesMin, int fRecovery, int fSwitching, int fSkipFanout, int fUseProfile, int fUseBuffs, int fVerbose );
 }
 
+static inline double get_area( Abc_Frame_t * pAbc )
+{
+    return Abc_NtkGetMappedArea( Abc_NtkMap( Abc_NtkStrash( Abc_FrameReadNtk( pAbc ), 0, 0, 0 ), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ) );
+}
 
 parser Cmdline_Parser(int argc, char * argv[])
 {
@@ -31,6 +35,9 @@ parser Cmdline_Parser(int argc, char * argv[])
     return option;
 }
 
+void resynthesize( Abc_Frame_t * pAbc );
+
+void run_on_network( const char * file_name, string library, int frameNumber, int maxLevel, Metric_t metricType, float errorBound );
 
 int main(int argc, char * argv[])
 {
@@ -52,6 +59,14 @@ int main(int argc, char * argv[])
     int frameNumber = option.get <int> ("frameNumber");
     int maxLevel = option.get <int> ("maxLevel");
 
+    run_on_network( "bench_from_veri/v17.blif", library, frameNumber, maxLevel, metricType, errorBound );
+    run_on_network( "bench_from_veri/v432.blif", library, frameNumber, maxLevel, metricType, errorBound );
+    run_on_network( "bench_from_veri/v499.blif", library, frameNumber, maxLevel, metricType, errorBound );
+    run_on_network( "benchmarks/priority_depth_2018.blif", library, frameNumber, maxLevel, metricType, errorBound );
+    run_on_network( "benchmarks/int2float_depth_2018.blif", library, frameNumber, maxLevel, metricType, errorBound );
+    // run_on_network( "blif/s344.blif", library, frameNumber, maxLevel, metricType, errorBound );
+    // run_on_network( "blif/s349.blif", library, frameNumber, maxLevel, metricType, errorBound );
+
     // deal with IO
     path inputPath(input);
     DASSERT(exists(inputPath));
@@ -60,6 +75,45 @@ int main(int argc, char * argv[])
     path outPrefix(outputPath);
     outPrefix += inputPath.stem().string();
 
+    
+
+    return 0;
+}
+
+void resynthesize( Abc_Frame_t * pAbc )
+{
+    ostringstream command("");
+    double area;
+    double previous_area;
+
+    if ( pAbc == nullptr )
+    {
+        cout << "resynthesize: framework is null!" << endl;
+        exit( 0 );
+    }
+    Abc_Ntk_t * pNtkLogic = Abc_FrameReadNtk(pAbc);
+    area = get_area( pAbc );
+    previous_area = area + 1;
+    cout << "the initial area is " << area << endl;
+
+    /* doing resynthesis until the area is not smaller */
+    while ( area < previous_area )
+    {
+        previous_area = area;
+        command << "balance; rewrite; refactor; balance; rewrite; rewrite -z; balance; refactor -z; rewrite -z; balance";
+        cout << "abc command " << command.str() << endl;
+        DASSERT(!Cmd_CommandExecute(pAbc, command.str().c_str()));
+        command.str("");
+
+        area = get_area( pAbc );
+        cout << "new area is " << area << endl;
+    }
+    cout << "the final area is " << area << endl;
+}
+
+void run_on_network( const char * file_name, string library, int frameNumber, int maxLevel, Metric_t metricType, float errorBound )
+{
+    fprintf( stderr, "running on the network %s\n", file_name );
     clock_t time;
     time = clock();
     // start abc
@@ -72,40 +126,29 @@ int main(int argc, char * argv[])
     DASSERT(!Cmd_CommandExecute(pAbc, command.str().c_str()));
     command.str("");
 
-    char * fileName1 = "data/arithmetic/adder.blif";    // cannot use this network, because it's too big and the memory usage is out of tolerance.
-    char * fileName2 = "data/su/c1908.blif";    // cannot open. Don't know why
-    char * fileName3 = "in/Alexanderia_test_input.blif";
-    char * fileName4 = "in/2_bit_accurate_multiplier.blif";
-    char * fileName5 = "in/Alexanderia_test_bench_2.blif";
-    char * fileName6 = "in/Alexanderia_test_bench_3.blif";
-    char * fileName7 = "benchmarks/cavlc_depth_2018.blif";
-    char * fileName8 = "benchmarks/ctrl_depth_2017.blif";   // abc/src/misc/vec/vecPtr.h:388: void* Vec_PtrEntry(Vec_Ptr_t*, int): Assertion `i >= 0 && i < p->nSize' failed.
-    char * fileName9 = "benchmarks/int2float_depth_2018.blif";
-    char * fileName10 = "benchmarks/priority_depth_2018.blif";
-    char * fileName11 = "benchmarks/router_depth_2018.blif";    // cannot execute, because Abc_NtkDup does some optimization
-    Abc_Ntk_t * pNtkNetlist = Io_ReadBlif( fileName9, 1 );
-    cout << "the benchmark: " << Abc_NtkName( pNtkNetlist ) << endl << 
-        "number of PIs: " << Abc_NtkPiNum( pNtkNetlist ) << endl <<
-        "number of POs: " << Abc_NtkPoNum( pNtkNetlist ) << endl <<
-        "number of nodes:" << Abc_NtkNodeNum( pNtkNetlist ) << endl <<
-        "number of levels: " << Abc_NtkLevel( pNtkNetlist ) << endl;
+    /* read blif using global frame */
+    command << "read_blif " << file_name;
+    cout << "abc command " << command.str() << endl;
+    DASSERT(!Cmd_CommandExecute(pAbc, command.str().c_str()));
+    command.str("");
+    command << "print_stats";
+    cout << "abc command " << command.str() << endl;
+    DASSERT(!Cmd_CommandExecute(pAbc, command.str().c_str()));
+    command.str("");
 
-    // sasimi + vecbee
-//    Abc_Ntk_t * pNtk = Abc_FrameReadNtk(pAbc);
-    Abc_Ntk_t * pNtkLogic = Abc_NtkToLogic( pNtkNetlist );
+    resynthesize( pAbc );
+
+
+    Abc_Ntk_t * pNtkLogic = Abc_FrameReadNtk(pAbc);
+    cout << "the network functionality is " << pNtkLogic->ntkFunc << ", and the network type is " << pNtkLogic->ntkType << endl;
+
     SASIMI_Manager_t sasimiMng(pNtkLogic, frameNumber, maxLevel, metricType, errorBound);
-//    sasimiMng.GreedySelection(pNtk, outPrefix.string());
-
-    // // debug begin
-    // cout << "GetDArea: network type is " << pNtkLogic->ntkType << ", and network function is " << pNtkLogic->ntkFunc << endl;
-    // //debug end
-
 
     int size = Abc_NtkPoNum( pNtkLogic );
     if ( size == 1 )
     {
         cout << "the number of primary outputs must be larger than 1!" << endl;
-        return 0;
+        return;
     }
     int threshold[size];
     // assign the threshold
@@ -139,7 +182,5 @@ int main(int argc, char * argv[])
     // stop abc
     Abc_Stop();
     time = clock() - time;
-    printf( "time consumed: %6.2f sec\n", (float)(time) / (float)(CLOCKS_PER_SEC) );
-
-    return 0;
+    fprintf( stderr, "time consumed: %6.2f sec\n", (float)(time) / (float)(CLOCKS_PER_SEC) );
 }

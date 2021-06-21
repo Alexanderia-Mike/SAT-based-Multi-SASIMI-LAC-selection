@@ -17,6 +17,7 @@
 #include "bool/dec/dec.h"
 #include "misc/util/abc_global.h"
 #include "misc/util/util_hack.h"
+#include "misc/zlib/zlib.h"
 #include "map/mio/mio.h"
 #include "map/mio/mioInt.h"
 #include "map/mapper/mapper.h"
@@ -32,6 +33,7 @@
 #include <sat/bsat/satSolver.h>
 #include <sat/bsat/satStore.h>
 #include <sat/cnf/cnf.h>
+
 
 extern "C" {
 
