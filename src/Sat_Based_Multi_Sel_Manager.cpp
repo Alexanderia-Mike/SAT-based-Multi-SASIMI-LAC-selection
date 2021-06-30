@@ -4,7 +4,7 @@ using namespace std::filesystem;
 static int vec_to_int( std::vector<int> vec );
 
 SBMSM_t::SBMSM_t( IN Abc_Ntk_t * _pOriNtk, int _threshold[], SASIMI_Manager_t & _sasimiMng )
-: pOriNtk( _pOriNtk ), sasimiMng( _sasimiMng ), pMiter( nullptr ), OriPINum( 0 ), MUXPINum( 0 )
+: sasimiMng( _sasimiMng ), pMiter( nullptr ), OriPINum( 0 ), MUXPINum( 0 )
 {
     // assigning file names
     strcpy( cnfFileName, "intermediate-results/Final_Miter_CNF.cnf" );
@@ -16,13 +16,40 @@ SBMSM_t::SBMSM_t( IN Abc_Ntk_t * _pOriNtk, int _threshold[], SASIMI_Manager_t & 
     strcpy( verifyMiterName, "intermediate-results/Alexanderia_Verify_Miter.blif" );
     strcpy( cnfFileNameVerifyMiter, "intermediate-results/Alexanderia_Verify_Miter_CNF.cnf" );
     // copying networks
+    pOriNtk = Abc_NtkDup(_pOriNtk);
     pAppNtk = Abc_NtkDup(pOriNtk);
+    Abc_Ntk_Assign_Level();
+    /* debug begin */
+    // Abc_Obj_t * pObj;
+    // int i;
+    // std::cout << "for input network: " << std::endl;
+    // Abc_NtkForEachObj( _pOriNtk, pObj, i )
+    // {
+    //     std::cout << Abc_ObjName( pObj ) << ": " << Abc_ObjLevel( pObj ) << std::endl;
+    // }
+    // Ckt_WriteBlif( _pOriNtk, "intermediate-results/_pOriNtk_b1.blif" );
+    // std::cout << std::endl << "for ori network: " << std::endl;
+    // Abc_NtkForEachObj( pOriNtk, pObj, i )
+    // {
+    //     std::cout << std::endl << "fanins: ";
+    //     Abc_Obj_t * pFanin; int j;
+    //     Abc_ObjForEachFanin( pObj, pFanin, j )
+    //     {
+    //         std::cout << Abc_ObjName( pFanin ) << " ";
+    //     }
+    //     std::cout << std::endl << Abc_ObjName( pObj ) << ": " << Abc_ObjLevel( pObj ) << std::endl;
+    // }
+    // Ckt_WriteBlif( pOriNtk, "intermediate-results/pOriNtk_b1.blif" );
+    /* debug end */
     Abc_Ntk_Dup_Level();
+    std::cout << "4" << std::endl;
     pAppNtkDup = Abc_NtkDup(pOriNtk);
+    std::cout << "5" << std::endl;
     // initializing sasimi manager
     sasimiMng.PatchConst(pOriNtk); // add 0s and 1s to the original circuit
     sasimiMng.PatchConst(pAppNtk); // add 0s and 1s to the approximate circuit
     sasimiMng.PatchConst(pAppNtkDup); // add 0s and 1s to the approximate circuit
+    std::cout << "6" << std::endl;
     // initializing cnf parameters
     OriPIIDs = (int *) malloc( 0 ); 
     MUXPIIDs = (int *) malloc( 0 );
@@ -38,9 +65,16 @@ SBMSM_t::SBMSM_t( IN Abc_Ntk_t * _pOriNtk, int _threshold[], SASIMI_Manager_t & 
     // assign the threshold
     for ( int i = 0; i < size; ++i )
         threshold[i] = _threshold[i];
-    std::cout << "hey here" << std::endl;
-    std::vector<int> temp_vec( _threshold, _threshold + sizeof(_threshold)/sizeof(int) );
+    // std::cout << "hey here" << std::endl;
+    // std::cout << "threshold array = ";
+    // for ( int i = 0; i < size; ++i )
+    // {
+    //     std::cout << threshold[i];
+    // }
+    // std::cout << std::endl;
+    std::vector<int> temp_vec( threshold, threshold + size );
     threshold_value = vec_to_int( temp_vec );
+    // std::cout << "threshold value = " << threshold_value << std::endl;
 }
 
 static int vec_to_int( std::vector<int> vec )
@@ -50,7 +84,7 @@ static int vec_to_int( std::vector<int> vec )
         return vec[0];
     int ones = vec.back();
     vec.pop_back();
-    return ones + 10 * vec_to_int( vec );
+    return ones + 2 * vec_to_int( vec );
 }
 
 SBMSM_t::~SBMSM_t()
@@ -69,7 +103,7 @@ SBMSM_t::SAT_Based_Multi_Selection()
     std::cout << "--- the number of candidate LACs is " << candLACs.size() << std::endl;
     // print_candLAC(20);
     if ( !candLAC_check_size() ) return;
-    candLAC_truncate_size( 40 );
+    candLAC_truncate_size( truncateSize );
     // print_candLAC();
 
     // transform map to sop
@@ -80,7 +114,7 @@ SBMSM_t::SAT_Based_Multi_Selection()
     std::cout << "# Creating MUXed CNF! ------------------------------ " << std::endl;
     if ( !create_final_CNF() )
     {
-        std::cout << "no LAC can be applied!" << std::endl;
+        fprintf( stderr, "no LAC can be applied!\n" );
         return;
     }
 
@@ -100,10 +134,10 @@ SBMSM_t::SAT_Based_Multi_Selection()
     totalSavedArea = calculate_total_reduced_area();
     if ( totalSavedArea == -1 )
         // std::cout << "area calculation failed!" << std::endl;
-        fprintf( stderr, "area calculation failed!\n" );
+        fprintf( stderr, "\tarea calculation failed!\n" );
     else
         // std::cout << "the area saved is " << totalSavedArea << std::endl;
-        fprintf( stderr, "the area saved is %f\n", totalSavedArea );
+        fprintf( stderr, "\tthe area saved is %f\n", totalSavedArea );
 
     // free the dynamically allocated memory
     std::cout << "------- Clearing Memory!" << std::endl;
@@ -113,6 +147,50 @@ SBMSM_t::SAT_Based_Multi_Selection()
     std::cout << "------- Begin Verify!" << std::endl;
     build_verify_miter();
     solve_verify_miter_cnf();
+}
+
+void 
+SBMSM_t::Abc_Ntk_Assign_Level()
+{
+    Abc_Obj_t * pObj, * pFanin;
+    int i, j;
+    Abc_NtkForEachObj( pOriNtk, pObj, i )
+    {
+        pObj->Level = 0;
+    }
+    Vec_Ptr_t * vNodes = Abc_NtkDfs( pOriNtk, 0 );
+    Vec_PtrForEachEntry(Abc_Obj_t *, vNodes, pObj, i)
+    {
+        if ( Abc_ObjFaninNum( pObj ) == 0 )
+        {
+            pObj->Level = 0;
+            continue;
+        }
+        if ( Abc_ObjFanin0( pObj )->Type == ABC_OBJ_PI && Abc_ObjFaninNum( pObj ) == 1 )
+        {
+            pObj->Level = 1;
+            continue;
+        }
+        assert( Abc_ObjFanin0( pObj )->Level >= 1 || Abc_ObjFaninNum( pObj ) >= 2 );
+        unsigned int max_level = 0;
+        Abc_ObjForEachFanin( pObj, pFanin, j )
+        {
+            if ( pFanin->Level > max_level )
+            {
+                max_level = pFanin->Level;
+            }
+        }
+        pObj->Level = max_level + 1;
+    }
+    Abc_NtkForEachPi( pOriNtk, pObj, i )
+    {
+        pObj->Level = 0;
+    }
+    Abc_NtkForEachPo( pOriNtk, pObj, i )
+    {
+        pObj->Level = 0;
+    }
+    Vec_PtrFree(vNodes);
 }
 
 void 
@@ -147,9 +225,6 @@ SBMSM_t::collect_LACs()
     pAppSmlt->Input(seed);      // initialize PI for approximate simulator
     pAppSmlt->Simulate();
     std::cout << "--- getting CPM-one-cut" << std::endl;
-    /* debug begin */
-    
-    /* debug end */
     sasimiMng.GetCPMOneCut(oriSmlt, *pAppSmlt, bds);
     std::cout << "--- collecting mFFC" << std::endl;
     sasimiMng.CollectMFFC(*pAppSmlt, vMffcs);     // collect the Mffcs of the approximate simulator
@@ -235,8 +310,12 @@ SBMSM_t::create_miter_finalize()
     
     // add the sorting network.
     std::cout << "------- Adding Sorting Network!" << std::endl;
-    // miter_add_sorting_network( sortedSelectionSignals );
-    miter_add_sorting_network_area_encoded( sortedSelectionSignals, true, maximum_range );
+    if ( areaEncodeMode == AreaEncodeMode_t::NOENCODE )
+        miter_add_sorting_network( sortedSelectionSignals );
+    else if ( areaEncodeMode == AreaEncodeMode_t::AREAENCODE )
+        miter_add_sorting_network_area_encoded( sortedSelectionSignals, false, 0 );
+    else
+        miter_add_sorting_network_area_encoded( sortedSelectionSignals, true, maximum_range );
     print_candLAC( maximum_range );
     
     assert( Abc_NtkPoNum( pMiter ) == 1 );
@@ -267,7 +346,9 @@ SBMSM_t::create_naive_miter()
 
     std::cout << "------- Strashing Original and MUXed Network!" << std::endl;
     pOriNtk = Abc_NtkStrash( pOriNtk, 0, 0, 0 );
+    std::cout << "original strash succeeded" << std::endl;
     pAppNtk = Abc_NtkStrash( pAppNtk, 0, 0, 0 );
+    std::cout << "muxed strash succeeded" << std::endl;
 
     // create the miter
     std::cout << "------- Creating Miter!" << std::endl;
@@ -318,6 +399,15 @@ SBMSM_t::add_muxes()
     Abc_Obj_t * pMux;
     double previousProcession = 0, currentProcession = 0;
     for ( auto & candLAC : candLACs ) {
+        // /* debug begin */
+        // Abc_Obj_t * pFanout;
+        // int i;
+        // std::cout << "outputs for pTS: " << std::endl;
+        // Abc_ObjForEachFanout( candLAC.GetTS(), pFanout, i )
+        // {
+        //     std::cout << "    " << i << ". " << Abc_ObjName( pFanout ) << std::endl;
+        // }
+        // /* debug end */
         Abc_Obj_t * selection = Abc_NtkCreatePi( pAppNtk );
         if ( candLAC.GetIsInv() )
         {
@@ -338,6 +428,21 @@ SBMSM_t::add_muxes()
             std::cout << "-------------- " << count << " (out of " << candLACNum << ") MUXes finished" << std::endl;
             previousProcession = count / (double) candLACNum;
         }
+
+        // /* debug begin */
+        // std::cout << "mux " << count << std::endl;
+        // std::cout << "    input 1: " << Abc_ObjName( candLAC.GetTS() ) << std::endl;
+        // std::cout << "    input 2: " << Abc_ObjName( candLAC.GetSS() ) << std::endl;
+        // std::cout << "    outputs: " << std::endl;
+        // Abc_ObjForEachFanout( pMux, pFanout, i )
+        // {
+        //     std::cout << "        " << i << ". " << Abc_ObjName( pFanout ) << std::endl;
+        // }
+        // if ( count >= 3 )
+        // {
+        //     break;
+        // }
+        // /* debug end */
     }
 }
 
@@ -749,7 +854,7 @@ SBMSM_t::calculate_total_reduced_area ()
     std::cout << "---------- calculate_total_reduced_area: applying LACs!" << std::endl;
     // get the corresponding indices in <candLACs>
     originalArea = Abc_NtkGetMappedArea( pAppNtkDup );
-    for ( int i = 0; i < LACIndices.size(); ++i )
+    for ( int i = 0; i < LACIndices.size() && i < MUXPINum; ++i )
     {
         LACIndices[i] -= nCnfVars - candLACsDup.size() - 1;
         lac = candLACsDup[LACIndices[i]];
@@ -758,8 +863,8 @@ SBMSM_t::calculate_total_reduced_area ()
     reducedArea = Abc_NtkGetMappedArea( pAppNtkDup );
     std::cout << "original area = " << originalArea << " ";
     std::cout << "reduced area = " << reducedArea << std::endl;
-    fprintf( stderr, "original area = %f\n", originalArea );
-    fprintf( stderr, "reduction = %f\n", reducedArea );
+    fprintf( stderr, "\tarea after resynthesis = %f\n", originalArea );
+    fprintf( stderr, "\treduction = %f\n", reducedArea );
     return originalArea - reducedArea;
 }
 
@@ -774,9 +879,15 @@ SBMSM_t::apply_lac ( LAC_t & lac )
         std::cout << "bagayalu pTS" << std::endl;
     if ( pSS == nullptr )
         std::cout << "bagayalu pSS" << std::endl;
+    if (pTS == nullptr || pSS == nullptr)
+    {
+        std::cout << "wrong!";
+        return;
+    }
     // probably lac does not exists anymore
     if ( !pTS->pNtk || !pSS->pNtk )
     {
+        std::cout << "skipped" << std::endl;
         return;
     }
     assert( !Abc_ObjIsComplement(pTS) );
@@ -784,11 +895,6 @@ SBMSM_t::apply_lac ( LAC_t & lac )
     assert( pTS->pNtk == pSS->pNtk );
     assert( pTS->pNtk == pAppNtkDup );
     isInv = lac.GetIsInv();
-    if (pTS == nullptr || pSS == nullptr)
-    {
-        std::cout << "wrong!";
-        return;
-    }
         // return 1;
     if (!isInv) {
         if (Abc_ObjIsNode(pSS) && Abc_NodeIsConst0(pSS))
@@ -943,6 +1049,9 @@ SBMSM_t::sorted_selection_find_least ( std::vector<Abc_Obj_t *> &sortedSelection
             std::cout << "-------------- UNSAT! updating left pointer" << std::endl;
             left = pointer + 1;
         }
+        qdpll_reset( depqbf );
+        FILE * pOut = fopen( "intermediate-results/SAT_Problem_In.qdimacs", "w+" );
+        fclose( pOut );
 
         qdpll_delete ( depqbf );
     }

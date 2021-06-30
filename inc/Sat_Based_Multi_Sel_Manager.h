@@ -8,6 +8,8 @@
 #include <fstream>
 #include <sstream>
 
+extern int truncateSize;
+
 class SBMSM_t
 {
   private:
@@ -46,6 +48,7 @@ class SBMSM_t
     ////////////////////////////////////////////////////////////
   public:
     void Abc_Ntk_Dup_Level();
+    void Abc_Ntk_Assign_Level();
     SBMSM_t( IN Abc_Ntk_t * _pOriNtk, int _threshold[], SASIMI_Manager_t & _sasimiMng );
     ~SBMSM_t();
     void SAT_Based_Multi_Selection();

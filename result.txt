@@ -1,0 +1,42 @@
+
+===== setting: -m maxed -s area -a areaEncodeApprox
+
+===running on the network vtr_benchmarks_blif/2/b1.blif
+* area:
+	the initial area = 17
+* the network property:
+	pi = 3, po = 4, node = 7, level = 3
+the sorting size is 16
+	area after resynthesis = 15.000000
+	reduction = 5.000000
+	the area saved is 10.000000
+time consumed:   0.19 sec
+
+===running on the network vtr_benchmarks_blif/3/5xp1.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 7, po = 10, node = 92, level = 8
+the sorting size is 189
+	area after resynthesis = 208.000000
+	reduction = 126.000000
+	the area saved is 82.000000
+time consumed: 112.30 sec
+
+===running on the network vtr_benchmarks_blif/3/b1.blif
+* area:
+	the initial area = 17
+* the network property:
+	pi = 3, po = 4, node = 6, level = 3
+the sorting size is 23
+	area after resynthesis = 17.000000
+	reduction = 9.000000
+	the area saved is 8.000000
+time consumed:   0.14 sec
+
+===running on the network vtr_benchmarks_blif/3/c8.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 28, po = 18, node = 103, level = 7
+the sorting size is 342

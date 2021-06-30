@@ -164,11 +164,6 @@ void SASIMI_Manager_t::GetCPMOneCut(IN Simulator_t & oriSmlt, IN Simulator_t & a
     Abc_Ntk_t * pOriNtk = oriSmlt.GetNetwork();
     Abc_Ntk_t * pAppNtk = appSmlt.GetNetwork();
 
-    /* debug begin */
-    // Io_Write( pAppNtk, "intermediate-results/debug-1.blif", IO_FILE_BLIF );
-    Ckt_WriteBlif( pAppNtk, "intermediate-results/debug-1.blif" );
-    /* debug end */
-
     DASSERT(pOriNtk != pAppNtk);
     DASSERT(SmltChecker(&oriSmlt, &appSmlt));
     // get 1-cuts and the corresponding networks
@@ -791,7 +786,7 @@ void SASIMI_Manager_t::GetDMaxED(IN Simulator_t & appSmlt, IN vector <int64_t> &
     int nBlock = appSmlt.GetBlockNum();
     int frameCnt = 0;
     for (int i = 0; i < nBlock; ++i) {
-        uint64_t isChanged = appSmlt.GetValues(pTS, i) ^ appSmlt.GetValues(pSS, i);
+        uint64_t isChanged = appSmlt.GetValues(pTS, i) ^ appSmlt.GetValues(pSS, i); // pTS 和 pSS 输出值的差异
         for (int j = 0; j < 64; ++j) {
             if (frameCnt >= nFrame)
                 break;
@@ -799,20 +794,28 @@ void SASIMI_Manager_t::GetDMaxED(IN Simulator_t & appSmlt, IN vector <int64_t> &
                 if ( abs(oriOutputs[frameCnt] - appOutputs[frameCnt]) > dMaxErrorOld )
                     dMaxErrorOld = abs(oriOutputs[frameCnt] - appOutputs[frameCnt]);
                 if ( abs(appOutputsNew[frameCnt] - oriOutputs[frameCnt]) > dMaxErrorNew )
+                {
                     dMaxErrorNew = abs(appOutputsNew[frameCnt] - oriOutputs[frameCnt]);
+                    // std::cout << "dMaxErrorNew = " << dMaxErrorNew << std::endl;
+                }
             }
             else {
                 if ( abs(oriOutputs[frameCnt] - appOutputs[frameCnt]) > dMaxErrorOld )
                     dMaxInvErrorOld = abs(oriOutputs[frameCnt] - appOutputs[frameCnt]);
                 if ( abs(appOutputsNew[frameCnt] - oriOutputs[frameCnt]) > dMaxErrorNew )
+                {
                     dMaxInvErrorNew = abs(appOutputsNew[frameCnt] - oriOutputs[frameCnt]);
+                    // std::cout << "dMaxInvErrorNew = " << dMaxInvErrorNew << std::endl;
+                }
             }
             isChanged >>= 1;
             ++frameCnt;
         }
     }
-    dErrors.first = dMaxErrorNew - dMaxErrorOld;
-    dErrors.second = dMaxInvErrorNew - dMaxInvErrorOld;
+    // dErrors.first = dMaxErrorNew - dMaxErrorOld;
+    dErrors.first = dMaxErrorNew;
+    // dErrors.second = dMaxInvErrorNew - dMaxInvErrorOld;
+    dErrors.second = dMaxInvErrorNew;
 }
 
 
@@ -961,28 +964,43 @@ void LAC_t::Print() const
 
 bool LAC_t::operator < (const LAC_t & other) const
 {
-    // if (this->FOM < 0 && other.FOM > 0)
-    //     return true;
-    // if (this->FOM > 0 && other.FOM < 0)
-    //     return false;
-    // if (this->FOM > 0 && other.FOM > 0) {
-    //     if (this->FOM == other.FOM)
-    //         return this->dArea > other.dArea;
-    //     else
-    //         return this->FOM > other.FOM;
-    // }
-    // if (this->FOM == other.FOM)
-    //     return this->dArea > other.dArea;
-    // else
-    //     return this->FOM < other.FOM;
-    if (this->FOM < 0 && other.FOM > 0)
-        return true;
-    if (this->FOM > 0 && other.FOM < 0)
-        return false;
-    if (this->FOM > 0 && other.FOM > 0) {
+    if ( sortingMethod == LACSortMethod_t::AREAERROR )
+    {
+        if (this->FOM < 0 && other.FOM > 0)
+            return true;
+        if (this->FOM > 0 && other.FOM < 0)
+            return false;
+        if (this->FOM > 0 && other.FOM > 0) {
+            if (this->FOM == other.FOM)
+                return this->dArea > other.dArea;
+            else
+                return this->FOM > other.FOM;
+        }
+        if (this->FOM == other.FOM)
+            return this->dArea > other.dArea;
+        else
+            return this->FOM < other.FOM;
+    }
+    else if ( sortingMethod == LACSortMethod_t::AREA )
+    {
+        if (this->FOM < 0 && other.FOM > 0)
+            return true;
+        if (this->FOM > 0 && other.FOM < 0)
+            return false;
+        if (this->FOM > 0 && other.FOM > 0) {
+            return this->dArea > other.dArea;
+        }
         return this->dArea > other.dArea;
     }
-    return this->dArea > other.dArea;
+    else
+    {
+        if ( this->dArea == other.dArea )
+        {
+            assert( pTS->Id != pSS->Id );
+            return ( (int) pTS->Id - pSS->Id) % 2;
+        }
+        return ( ( int ) this->dArea - ( int ) other.dArea ) % 2;
+    }
 }
 
 
@@ -1339,7 +1357,7 @@ void SASIMI_Manager_t::Alexanderia_CollectAllLACsUnderNMED( IN Simulator_t & ori
     tVec bdNode(nFrame, 0);
     Abc_NtkForEachNode(pAppNtk, pObj, i) {
         if (!Abc_NodeIsConst(pObj)) {
-            ReorganizeBD(bds, pObj, bdNode); // cpm[PO][obj][frameBlock] -> cpm[frame][POBlock]
+            ReorganizeBD(bds, pObj, bdNode); // cpm[PO][obj][frameBlock] -> cpm[frame][POBlock], pdNode[pObj->Id] 表示 pObj 引起的所有 PO 在所有模拟中的变化测次数
             Alexanderia_CollectNodeLACUnderNMED(pObj, appSmlt, oriOutputs, appOutputs, bdNode, sources, vMffcs, baseNMED, nodeLACs[pObj->Id], nodeLACsDup[pObj->Id], Abc_NtkObj( pAppNtkDup, i ), pAppNtkDup );
         }
     }
@@ -1569,7 +1587,8 @@ void SASIMI_Manager_t::Alexanderia_CollectNodeLACUnderMaxED(IN Abc_Obj_t * pTS, 
 {
     Abc_Ntk_t * pAppNtk = appSmlt.GetNetwork();
     DASSERT(pAppNtk == pTS->pNtk);
-    int64_t errorBoundInt = threshold;
+    int64_t errorBoundInt = (int64_t) threshold * errorScale;
+    std::cout << "errorboundint = " << errorBoundInt << std::endl;
     double invDelay = Mio_LibraryReadDelayInvMax((Mio_Library_t *)Abc_FrameReadLibGen()) + 0.1;
     int areaInv = Mio_LibraryReadAreaInv((Mio_Library_t *)Abc_FrameReadLibGen());
     int areaBuf = Mio_LibraryReadAreaBuf((Mio_Library_t *)Abc_FrameReadLibGen());
@@ -1577,14 +1596,25 @@ void SASIMI_Manager_t::Alexanderia_CollectNodeLACUnderMaxED(IN Abc_Obj_t * pTS, 
     nodeLACDup.SetFOM(0.0);
 
     vector <int64_t> appOutputsNew(nFrame);
+    std::cout << "nframe = " << nFrame << std::endl;
     for (int k = 0; k < nFrame; ++k)
+    {
         appOutputsNew[k] = appOutputs[k] ^ bdNode[k];   // 第 k 次模拟，改变 pTS 之后新的 ouptut
+        // std::cout << "appoutput new " << k << " = " << appOutputsNew[k] << std::endl;
+        // std::cout << "appoutput " << k << " = " << appOutputs[k] << std::endl;
+        // std::cout << "bdNode " << k << " = " << bdNode[k] << std::endl;
+        // std::cout << "orioutput " << k << " = " << oriOutputs[k] << std::endl;
+    }
 
     // consider constant replacement
     Abc_Obj_t * pConst0 = Ckt_GetConst(pAppNtk, 0);
     Abc_Obj_t * pConst0Dup = Ckt_GetConst(pAppNtkDup, 0);
     pair <int64_t, int64_t> dErrors;
+    // std::cout << "before" << std::endl;
+    // std::cout << "first " << dErrors.first << ", second " << dErrors.second << std::endl;
     GetDMaxED(appSmlt, oriOutputs, appOutputs, appOutputsNew, pTS, pConst0, dErrors);
+    // std::cout << "after" << std::endl;
+    // std::cout << "first " << dErrors.first << ", second " << dErrors.second << std::endl;
     if (baseMaxED + dErrors.first <= errorBoundInt) {
         double dArea = GetDArea(pTS, pConst0, vMffcs);
         double tempFOM = dArea / (dErrors.first + 1e-10);
@@ -1783,8 +1813,10 @@ void SASIMI_Manager_t::Alexanderia_CollectNodeLACUnderArea(IN Abc_Obj_t * pTS, I
     pair <int64_t, int64_t> dErrors;
     double dArea = GetDArea(pTS, pConst0, vMffcs);
     double tempFOM = dArea;
+    // cout << "pTS = " << Abc_ObjName( pTS ) << endl;
     if (nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM)
     {
+        // cout << "  SS = const 0, original fom = " << nodeLAC.GetFOM() << " new fom = " << tempFOM << endl;
         nodeLAC.Update(pTS, pConst0, false, dErrors.first, dArea, tempFOM);
         nodeLACDup.Update(pTSDup, pConst0Dup, false, dErrors.first, dArea, tempFOM);
     }
@@ -1796,6 +1828,7 @@ void SASIMI_Manager_t::Alexanderia_CollectNodeLACUnderArea(IN Abc_Obj_t * pTS, I
     tempFOM = dArea;
     if (nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM)
     {
+        // cout << "  SS = const 1, original fom = " << nodeLAC.GetFOM() << " new fom = " << tempFOM << endl;
         nodeLAC.Update(pTS, pConst1, false, dErrors.first, dArea, tempFOM);
         nodeLACDup.Update(pTSDup, pConst1Dup, false, dErrors.first, dArea, tempFOM);
     }
@@ -1848,8 +1881,9 @@ void SASIMI_Manager_t::Alexanderia_CollectNodeLACUnderArea(IN Abc_Obj_t * pTS, I
             if (isPoDriver)
                 dArea -= areaBuf;
             double tempFOM = dArea;
-            if ((dErrors.first < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.first >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+            if (nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM)
             {
+                // cout << "  SS = " << Abc_ObjName( pSS ) << ", original fom = " << nodeLAC.GetFOM() << " new fom = " << tempFOM << endl;
                 nodeLAC.Update(pTS, pSS, false, dErrors.first, dArea, tempFOM);
                 nodeLACDup.Update(pTSDup, Abc_NtkObj( pAppNtkDup, i ), false, dErrors.first, dArea, tempFOM);
             }
@@ -1871,9 +1905,10 @@ void SASIMI_Manager_t::Alexanderia_CollectNodeLACUnderArea(IN Abc_Obj_t * pTS, I
             continue;
         double dArea = GetDArea(pTS, pSS, vMffcs);
         dArea -= areaBuf;
-        double tempFOM = dArea / (dErrors.first + 1e-10);
-        if ((dErrors.first < 0 && nodeLAC.GetFOM() > tempFOM) || (dErrors.first >= 0 && nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM))
+        double tempFOM = dArea;
+        if (nodeLAC.GetFOM() >= 0 && nodeLAC.GetFOM() < tempFOM)
         {
+            // cout << "  SS = " << Abc_ObjName( pSS ) << ", original fom = " << nodeLAC.GetFOM() << " new fom = " << tempFOM << endl;
             nodeLAC.Update(pTS, pSS, false, dErrors.first, dArea, tempFOM);
             nodeLACDup.Update(pTSDup, Abc_NtkPi( pAppNtkDup, i ), false, dErrors.first, dArea, tempFOM);
         }

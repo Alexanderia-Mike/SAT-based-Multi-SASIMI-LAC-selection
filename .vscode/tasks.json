@@ -4,13 +4,21 @@
 	"tasks": [
 		{
 			"type": "shell",
-			"label": "C/C++: cpp build active file", // name of task
+			"label": "lac_without_structure", // name of task
 			"command": "g++",
 			"args":[
 				"-v",
 				"-g",
 				"-DLIN64",
-				"${workspaceFolder}/src/*.cpp",
+				"${workspaceFolder}/src/cktUtil.cpp",
+				"${workspaceFolder}/src/test_new.cpp",
+				"${workspaceFolder}/src/sasimi.cpp",
+				"${workspaceFolder}/src/simulator.cpp",
+				"${workspaceFolder}/src/strashtest.cpp",
+				"${workspaceFolder}/src/cnf2Depqbf.cpp",
+				"${workspaceFolder}/src/sortingNetwork.cpp",
+				"${workspaceFolder}/src/Sat_Based_Multi_Sel_Manager.cpp",
+				"${workspaceFolder}/src/build_verify_miter.cpp",
 				"-Wall",
 				"-O3",
 				"-std=c++17",
@@ -40,19 +48,6 @@
 				"-I${workspaceFolder}/depqbf",
 				"-Iusr/include"
 			],
-			// "args": [
-			// 	"-g",
-			// 	"${fileDirname}/${fileBasename}",
-			// 	"-o",
-			// 	"${fileDirname}/${fileBasenameNoExtension}.out",
-			// 	"-pthread",
-			// 	"-lm",
-			// 	"-L${workspaceFolder}",
-			// 	"-labc",
-			// 	"-ldl",
-			// 	"-lreadline",
-			// 	"-I${workspaceFolder}"
-			// ],
 			"options": {
 				"cwd": "${workspaceFolder}"
 			},

@@ -11,6 +11,8 @@
 
 enum class Metric_t{ER, NMED, MRED, MaxED, Area};
 enum class Map_t{SCL, LUT};
+enum class LACSortMethod_t{RANDOM, AREA, AREAERROR};
+enum class AreaEncodeMode_t{NOENCODE, AREAENCODE, AREAENCODEAPPROX};
 
 
 typedef std::vector <uint64_t> tVec;

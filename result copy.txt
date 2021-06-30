@@ -1,0 +1,400 @@
+
+===== setting: -m er -s area -a areaEncodeApprox
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+the sorting size is 147
+	area after resynthesis = 1179.000000
+	reduction = 684.000000
+	the area saved is 495.000000
+time consumed: 212.38 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+the sorting size is 116
+	area after resynthesis = 409.000000
+	reduction = 349.000000
+	the area saved is 60.000000
+time consumed:   4.19 sec
+
+===running on the network bench_from_veri/v17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+the sorting size is 1
+	area after resynthesis = 14.000000
+	reduction = 14.000000
+	the area saved is 0.000000
+time consumed:   0.10 sec
+
+===== setting: -m nmed -s area -a areaEncodeApprox
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+the sorting size is 148
+	area after resynthesis = 1179.000000
+	reduction = 684.000000
+	the area saved is 495.000000
+time consumed: 235.27 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+the sorting size is 171
+	area after resynthesis = 409.000000
+	reduction = 283.000000
+	the area saved is 126.000000
+time consumed:   8.05 sec
+
+===running on the network bench_from_veri/v17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+time consumed:   0.11 sec
+
+===== setting: -m maxed -s area -a areaEncodeApprox
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+the sorting size is 143
+	area after resynthesis = 1179.000000
+	reduction = 668.000000
+	the area saved is 511.000000
+time consumed: 108.93 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+the sorting size is 187
+	area after resynthesis = 409.000000
+	reduction = 258.000000
+	the area saved is 151.000000
+time consumed:  10.48 sec
+
+===running on the network bench_from_veri/v17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+the sorting size is 17
+	area after resynthesis = 14.000000
+	reduction = 7.000000
+	the area saved is 7.000000
+time consumed:   0.15 sec
+
+===== setting: -m er -s random -a areaEncodeApprox
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+the sorting size is 90
+no LAC can be applied!
+time consumed:  88.56 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+the sorting size is 66
+	area after resynthesis = 409.000000
+	reduction = 369.000000
+	the area saved is 40.000000
+time consumed:   2.77 sec
+
+===running on the network bench_from_veri/v17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+the sorting size is 1
+	area after resynthesis = 14.000000
+	reduction = 14.000000
+	the area saved is 0.000000
+time consumed:   0.09 sec
+
+===== setting: -m nmed -s random -a areaEncodeApprox
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+the sorting size is 99
+	area after resynthesis = 1179.000000
+	reduction = 1170.000000
+	the area saved is 9.000000
+time consumed: 122.76 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+the sorting size is 87
+	area after resynthesis = 409.000000
+	reduction = 342.000000
+	the area saved is 67.000000
+time consumed:   7.59 sec
+
+===running on the network bench_from_veri/v17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+time consumed:   0.11 sec
+
+===== setting: -m maxed -s random -a areaEncodeApprox
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+the sorting size is 112
+	area after resynthesis = 1179.000000
+	reduction = 1164.000000
+	the area saved is 15.000000
+time consumed:  78.56 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+the sorting size is 48
+	area after resynthesis = 409.000000
+	reduction = 396.000000
+	the area saved is 13.000000
+time consumed:   7.26 sec
+
+===running on the network bench_from_veri/v17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+the sorting size is 16
+	area after resynthesis = 14.000000
+	reduction = 7.000000
+	the area saved is 7.000000
+time consumed:   0.12 sec
+
+===== setting: -m er -s area -a noEncode
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+the sorting size is 19
+	area after resynthesis = 1179.000000
+	reduction = 684.000000
+	the area saved is 495.000000
+time consumed:  44.08 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+the sorting size is 19
+	area after resynthesis = 409.000000
+	reduction = 350.000000
+	the area saved is 59.000000
+time consumed:   1.50 sec
+
+===running on the network bench_from_veri/v17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+the sorting size is 1
+	area after resynthesis = 14.000000
+	reduction = 14.000000
+	the area saved is 0.000000
+time consumed:   0.09 sec
+
+===== setting: -m nmed -s area -a noEncode
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+the sorting size is 19
+	area after resynthesis = 1179.000000
+	reduction = 684.000000
+	the area saved is 495.000000
+time consumed:  57.17 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+the sorting size is 19
+	area after resynthesis = 409.000000
+	reduction = 283.000000
+	the area saved is 126.000000
+time consumed:   5.43 sec
+
+===running on the network bench_from_veri/v17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+time consumed:   0.11 sec
+
+===== setting: -m maxed -s area -a noEncode
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+the sorting size is 19
+	area after resynthesis = 1179.000000
+	reduction = 668.000000
+	the area saved is 511.000000
+time consumed:  68.55 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+the sorting size is 19
+	area after resynthesis = 409.000000
+	reduction = 258.000000
+	the area saved is 151.000000
+time consumed:   7.07 sec
+
+===running on the network bench_from_veri/v17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+the sorting size is 4
+	area after resynthesis = 14.000000
+	reduction = 7.000000
+	the area saved is 7.000000
+time consumed:   0.12 sec
+
+===== setting: -m er -s random -a noEncode
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+the sorting size is 19
+no LAC can be applied!
+time consumed:  65.43 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+the sorting size is 19
+	area after resynthesis = 409.000000
+	reduction = 383.000000
+	the area saved is 26.000000
+time consumed:   1.08 sec
+
+===running on the network bench_from_veri/v17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+the sorting size is 1
+	area after resynthesis = 14.000000
+	reduction = 14.000000
+	the area saved is 0.000000
+time consumed:   0.09 sec
+
+===== setting: -m nmed -s random -a noEncode
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+the sorting size is 19
+	area after resynthesis = 1179.000000
+	reduction = 1167.000000
+	the area saved is 12.000000
+time consumed: 218.45 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+the sorting size is 19
+	area after resynthesis = 409.000000
+	reduction = 354.000000
+	the area saved is 55.000000
+time consumed:   6.27 sec
+
+===running on the network bench_from_veri/v17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+time consumed:   0.11 sec
+
+===== setting: -m maxed -s random -a noEncode
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+the sorting size is 19
+	area after resynthesis = 1179.000000
+	reduction = 1167.000000
+	the area saved is 12.000000
+time consumed:  65.13 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+the sorting size is 19
+	area after resynthesis = 409.000000
+	reduction = 397.000000
+	the area saved is 12.000000
+time consumed:   7.13 sec
+
+===running on the network bench_from_veri/v17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+the sorting size is 4
+	area after resynthesis = 14.000000
+	reduction = 7.000000
+	the area saved is 7.000000
+time consumed:   0.12 sec

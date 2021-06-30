@@ -7,11 +7,18 @@
         {
             //debug
             "name": "(gdb) Launch",
-            "preLaunchTask": "C/C++: cpp build active file",
+            "preLaunchTask": "lac_without_structure",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/sasimi-vecbee.out",
-            // "args": ["c880"],
+            "args": [
+                "-m",
+                "er",
+                "-s",
+                "area",
+                "-a",
+                "areaEncodeApprox"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
