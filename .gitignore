@@ -302,3 +302,6 @@ TSWLatexianTemp*
 
 # standalone packages
 *.sta
+
+# iwls benchmarks
+IWLS_benchmarks_2005_V_1.0

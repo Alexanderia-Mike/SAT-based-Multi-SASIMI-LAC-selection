@@ -1158,3 +1158,17 @@ DArea: 2 mapped_area:2 DError64 FOM: 0.03125 SS name: n159, TS name: n81
 -------------- Writing Miter CNF!
 -------------- reading cnf into depqbf
 -------------- solving qsat
+-------------- updating boundaries
+-------------- UNSAT! updating left pointer
+----------- 4 round: left = 301; right = 342; pointer = 321
+-------------- duplicating miter
+-------------- duplicating sorted selection signals
+-------------- updating output
+-------------- writing duplicated miter blif
+-------------- Transforming to AIG!
+---------- intermediate-results/Final_Miter_DupAig : pi =    88  po =     1  and =    9251  lev =  56
+-------------- Transforming to CNF!
+-------------- Assigning PIIDs!
+-------------- Writing Miter CNF!
+-------------- reading cnf into depqbf
+-------------- solving qsat
