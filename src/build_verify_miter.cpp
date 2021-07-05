@@ -5,6 +5,7 @@ SBMSM_t::build_verify_miter()
 {
     Abc_NtkDelete( pMiter );
     create_naive_miter_from_networks( pOriNtk, pAppNtkDup );
+    Ckt_WriteBlif( pMiter, "intermediate-results/Verify_Miter_BLIF.blif" );
     transform_verify_miter_to_cnf();
 }
 
@@ -19,18 +20,18 @@ SBMSM_t::solve_verify_miter_cnf()
     std::cout << "------- Loading CNF to Depqbf!" << std::endl;
     cnf_file_to_depqbf_for_verify_miter( cnfFileNameVerifyMiter, depqbf, OriPIIDs );
     std::cout << "------- Solving the Result!" << std::endl;
-    QDPLLResult res = QDPLL_SolveSatWriteAssignments( depqbf, SATResultFileName );
+    QDPLLResult res = QDPLL_SolveSatWriteAssignments( depqbf, "intermediate-results/sat_problem_verify_out.qdimacs", "intermediate-results/sat_problem_verify_in.qdimacs" );
     if ( res == QDPLL_RESULT_SAT )
     {
-        std::cout << "verify succeeds" << std::endl;
+        fprintf( stderr, "verify succeeds\n" );
     }
     else if ( res == QDPLL_RESULT_UNSAT )
     {
-        std::cout << "verify fails" << std::endl;
+        fprintf( stderr, "verify fails\n" );
     }
     else
     {
-        std::cout << "cannot verify" << std::endl;
+        fprintf( stderr, "cannot verify\n" );
     }
 
     std::cout << "------- Clearing Memory!" << std::endl;

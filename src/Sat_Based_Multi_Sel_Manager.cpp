@@ -9,6 +9,7 @@ SBMSM_t::SBMSM_t( IN Abc_Ntk_t * _pOriNtk, int _threshold[], SASIMI_Manager_t & 
     // assigning file names
     strcpy( cnfFileName, "intermediate-results/Final_Miter_CNF.cnf" );
     strcpy( SATResultFileName, "intermediate-results/SAT_Problem_Out.qdimacs" );
+    strcpy( SATProblemFileName, "intermediate-results/SAT_Problem_In.qdimacs" );
     strcpy( aigFileName, "intermediate-results/Alexanderia_Final_Miter_AIG.aiger" );
     strcpy( naiveMiterName, "intermediate-results/Alexanderia_Naive_Miter.blif" );
     strcpy( aigFileNameDup, "intermediate-results/Final_Miter_DupAig.aiger" );
@@ -127,11 +128,11 @@ SBMSM_t::SAT_Based_Multi_Selection()
     std::cout << "------- Loading CNF to Depqbf!" << std::endl;
     Cnf_DataFile2Depqbf( cnfFileName, depqbf, OriPIIDs, MUXPIIDs );
     std::cout << "------- Solving the Result!" << std::endl;
-    QDPLLResult res = QDPLL_SolveSatWriteAssignments( depqbf, SATResultFileName );
+    QDPLLResult res = QDPLL_SolveSatWriteAssignments( depqbf, SATResultFileName, SATProblemFileName );
 
     // evaluate the area saved by this approximate local change.
     std::cout << "------- Calculating Total Recuded Area!" << std::endl;
-    totalSavedArea = calculate_total_reduced_area();
+    totalSavedArea = lacApplyMode == 0 ? calculate_total_reduced_area() : calculate_total_reduced_area_s_a_a_d();
     if ( totalSavedArea == -1 )
         // std::cout << "area calculation failed!" << std::endl;
         fprintf( stderr, "\tarea calculation failed!\n" );
@@ -334,6 +335,7 @@ SBMSM_t::create_miter_finalize()
     // AND the selection signal with the output
     std::cout << "------- ANDing the Selection Signal with the Original Output!" << std::endl;
     create_sorted_miter( sortedSelectionSignals, selectionIndex );
+    Ckt_WriteBlif( pMiter, "intermediate-results/Final_Miter_BLIF.blif" );
     return true;
 }
 
@@ -868,6 +870,57 @@ SBMSM_t::calculate_total_reduced_area ()
     return originalArea - reducedArea;
 }
 
+double 
+SBMSM_t::calculate_total_reduced_area_s_a_a_d ()
+{
+    std::ifstream       ifStream;
+    std::istringstream  isStream;
+    std::string         iLine, trashBin1, trashBin2;
+    int                 LACIndex;
+    const std::string   stringV( "V" ), string0( "0" );
+    std::vector<int>    LACIndices;
+    double              originalArea, reducedArea;
+    LAC_t               lac;
+    
+    // open the file that stores the qSAT solution
+    ifStream.open( SATResultFileName, std::ifstream::in );
+    if ( !ifStream.is_open() )
+    {
+        printf( "Cannot open file \"%s\" for writing.\n", SATResultFileName );
+        return -1;
+    }
+    if ( !LACIndices.empty() )  LACIndices.clear();
+    std::cout << "---------- calculate_total_reduced_area: reading the file!" << std::endl;
+    // read the file and stores all the positive literals into the vector <LACIndices>
+    while ( std::getline( ifStream, iLine ) )
+    {
+        isStream.str( iLine );
+        isStream >> trashBin1 >> LACIndex >> trashBin2;
+        assert( trashBin1.compare( stringV ) == 0 );
+        assert( trashBin2.compare( string0 ) == 0 );
+        if ( LACIndex > 0 ) 
+            LACIndices.push_back( LACIndex );
+        isStream.clear();
+    }
+
+    std::cout << "---------- calculate_total_reduced_area: applying LACs!" << std::endl;
+    // get the corresponding indices in <candLACs>
+    originalArea = Abc_NtkGetMappedArea( pAppNtkDup );
+    for ( int i = 0; i < LACIndices.size() && i < MUXPINum; ++i )
+    {
+        LACIndices[i] -= nCnfVars - candLACsDup.size() - 1;
+        lac = candLACsDup[LACIndices[i]];
+        apply_lac_s_a_a_d( lac );
+    }
+    batch_deletion_s_a_a_d();
+    reducedArea = Abc_NtkGetMappedArea( pAppNtkDup );
+    std::cout << "original area = " << originalArea << " ";
+    std::cout << "reduced area = " << reducedArea << std::endl;
+    fprintf( stderr, "\tarea after resynthesis = %f\n", originalArea );
+    fprintf( stderr, "\treduction = %f\n", reducedArea );
+    return originalArea - reducedArea;
+}
+
 void 
 SBMSM_t::apply_lac ( LAC_t & lac )
 {
@@ -904,6 +957,7 @@ SBMSM_t::apply_lac ( LAC_t & lac )
         else
             std::cout << Abc_ObjName(pTS) << " is replaced by " << Abc_ObjName(pSS) << std::endl;
         // std::cout << "replacing " << Abc_ObjName( pTS ) << " with " << Abc_ObjName( pSS ) << std::endl;
+        std::cout << "== deleting: " << Abc_ObjName( pTS ) << std::endl;
         alexanderia_replace_obj(pTS, pSS);
     }
     else {
@@ -917,7 +971,61 @@ SBMSM_t::apply_lac ( LAC_t & lac )
         DASSERT(!(Abc_ObjIsNode(pSS) && Abc_NodeIsConst(pSS)));
         // cout << Abc_ObjName(pTS) << " is replaced by " << Abc_ObjName(pSS) << " with inverter with estimated error " << error << endl;
         Abc_Obj_t * pInv = Abc_NtkCreateNodeInv(pAppNtkDup, pSS);  // complemented...
+        std::cout << "== deleting: " << Abc_ObjName( pTS ) << std::endl;
         alexanderia_replace_obj(pTS, pInv);
+    }
+}
+
+void 
+SBMSM_t::apply_lac_s_a_a_d ( LAC_t & lac )
+{
+    Abc_Obj_t * pTS, * pSS;
+    bool isInv;
+    pTS = lac.GetTS();
+    pSS = lac.GetSS();
+    if ( pTS == nullptr )
+        std::cout << "bagayalu pTS" << std::endl;
+    if ( pSS == nullptr )
+        std::cout << "bagayalu pSS" << std::endl;
+    if (pTS == nullptr || pSS == nullptr)
+    {
+        std::cout << "wrong!";
+        return;
+    }
+    // probably lac does not exists anymore
+    if ( !pTS->pNtk || !pSS->pNtk )
+    {
+        std::cout << "skipped" << std::endl;
+        return;
+    }
+    assert( !Abc_ObjIsComplement(pTS) );
+    assert( !Abc_ObjIsComplement(pSS) );
+    assert( pTS->pNtk == pSS->pNtk );
+    assert( pTS->pNtk == pAppNtkDup );
+    isInv = lac.GetIsInv();
+        // return 1;
+    if (!isInv) {
+        if (Abc_ObjIsNode(pSS) && Abc_NodeIsConst0(pSS))
+            std::cout << Abc_ObjName(pTS) << " is replaced by zero" << std::endl;
+        else if (Abc_ObjIsNode(pSS) && Abc_NodeIsConst1(pSS))
+            std::cout << Abc_ObjName(pTS) << " is replaced by one" << std::endl;
+        else
+            std::cout << Abc_ObjName(pTS) << " is replaced by " << Abc_ObjName(pSS) << std::endl;
+        // std::cout << "replacing " << Abc_ObjName( pTS ) << " with " << Abc_ObjName( pSS ) << std::endl;
+        alexanderia_replace_obj_s_a_a_d(pTS, pSS);
+    }
+    else {
+        if (Abc_ObjIsNode(pSS) && Abc_NodeIsConst0(pSS))
+            std::cout << Abc_ObjName(pTS) << " is replaced by zero" << std::endl;
+        else if (Abc_ObjIsNode(pSS) && Abc_NodeIsConst1(pSS))
+            std::cout << Abc_ObjName(pTS) << " is replaced by one" << std::endl;
+        else
+            std::cout << Abc_ObjName(pTS) << " is replaced by " << Abc_ObjName(pSS) << std::endl;
+        // std::cout << "replacing " << Abc_ObjName( pTS ) << " with " << Abc_ObjName( pSS ) << std::endl;
+        DASSERT(!(Abc_ObjIsNode(pSS) && Abc_NodeIsConst(pSS)));
+        // cout << Abc_ObjName(pTS) << " is replaced by " << Abc_ObjName(pSS) << " with inverter with estimated error " << error << endl;
+        Abc_Obj_t * pInv = Abc_NtkCreateNodeInv(pAppNtkDup, pSS);  // complemented...
+        alexanderia_replace_obj_s_a_a_d(pTS, pInv);
     }
 }
 
@@ -938,6 +1046,33 @@ SBMSM_t::alexanderia_replace_obj( Abc_Obj_t * pNodeOld, Abc_Obj_t * pNodeNew )
 }
 
 void 
+SBMSM_t::alexanderia_replace_obj_s_a_a_d( Abc_Obj_t * pNodeOld, Abc_Obj_t * pNodeNew )
+{
+    assert( !Abc_ObjIsComplement(pNodeOld) );
+    assert( !Abc_ObjIsComplement(pNodeNew) );
+    assert( pNodeOld->pNtk == pNodeNew->pNtk );
+    assert( pNodeOld != pNodeNew );
+    assert( Abc_ObjFanoutNum(pNodeOld) > 0 );
+    // transfer the fanouts to the old node
+    // std::cout << "transfering fanouts" << std::endl;
+    Abc_ObjTransferFanout( pNodeOld, pNodeNew );
+}
+
+void 
+SBMSM_t::batch_deletion_s_a_a_d ()
+{
+    Abc_Obj_t * pObj; int i;
+    Abc_NtkForEachNode( pAppNtkDup, pObj, i )
+    {
+        if ( Abc_ObjFanoutNum( pObj ) == 0 )
+        {
+            std::cout << "== batch deleting: " << Abc_ObjName( pObj ) << std::endl;
+            alexanderia_delete_obj_rec( pObj );
+        }
+    }
+}
+
+void 
 SBMSM_t::alexanderia_delete_obj_rec( Abc_Obj_t * pObj )
 {
     Vec_Ptr_t * vNodes;
@@ -948,6 +1083,7 @@ SBMSM_t::alexanderia_delete_obj_rec( Abc_Obj_t * pObj )
     // delete fanins and fanouts
     vNodes = Vec_PtrAlloc( 100 );
     Abc_NodeCollectFanins( pObj, vNodes );
+    std::cout << "delete node: " << Abc_ObjName( pObj ) << std::endl;
     Abc_NtkDeleteObj( pObj );
     pObj->pNtk = NULL;
     Vec_PtrForEachEntry( Abc_Obj_t *, vNodes, pObj, i )

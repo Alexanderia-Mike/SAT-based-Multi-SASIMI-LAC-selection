@@ -10,6 +10,7 @@ LACSortMethod_t sortingMethod;
 AreaEncodeMode_t areaEncodeMode;
 float errorScale;
 int truncateSize;
+int lacApplyMode;
 
 
 using namespace std;
@@ -38,6 +39,7 @@ parser Cmdline_Parser(int argc, char * argv[])
     option.add <string>    ("areaEncodeMode", 'a', "sorting network area encoded, noEncode, areaEncode, areaEncodeApprox", false, "areaEncodeApprox");
     option.add <float>    ("errorBoundScale", 'c', "scale the errorbound, a float number", false, 1.0);
     option.add <int>    ("LACTruncateSize", 't', "the number of LACs that would be truncated", false, 20);
+    option.add <int>    ("lacApplyMode", 'p', "0 for apply and skip, and 1 for substitute and delete", false, 0);
     option.parse_check(argc, argv);
     return option;
 }
@@ -90,6 +92,7 @@ int main(int argc, char * argv[])
         areaEncodeMode = AreaEncodeMode_t::AREAENCODEAPPROX;
     errorScale = option.get <float> ("errorBoundScale");
     truncateSize = option.get <int> ("LACTruncateSize");
+    lacApplyMode = option.get <int> ("lacApplyMode");
     float errorBound = option.get <float> ("errorBound");
     int frameNumber = option.get <int> ("frameNumber");
     int maxLevel = option.get <int> ("maxLevel");
@@ -105,12 +108,12 @@ int main(int argc, char * argv[])
     // run_on_network( "vtr_benchmarks_blif/2/bbtas.blif", library, frameNumber, maxLevel, metricType, errorBound );
     run_on_network( "vtr_benchmarks_blif/3/5xp1.blif", library, frameNumber, maxLevel, metricType, errorBound ); // from here
     run_on_network( "vtr_benchmarks_blif/3/b1.blif", library, frameNumber, maxLevel, metricType, errorBound );
-    run_on_network( "vtr_benchmarks_blif/3/c8.blif", library, frameNumber, maxLevel, metricType, errorBound );
+    run_on_network( "vtr_benchmarks_blif/3/c8.blif", library, frameNumber, maxLevel, metricType, errorBound ); // too slow when first 40 LACs are chosen
     run_on_network( "vtr_benchmarks_blif/3/C17.blif", library, frameNumber, maxLevel, metricType, errorBound );
     // run_on_network( "vtr_benchmarks_blif/3/C432.blif", library, frameNumber, maxLevel, metricType, errorBound ); // too slow
-    run_on_network( "benchmarks/priority_depth_2018.blif", library, frameNumber, maxLevel, metricType, errorBound );
+    run_on_network( "benchmarks/priority_depth_2018.blif", library, frameNumber, maxLevel, metricType, errorBound ); // too slow when first 40 LACs are chosen
     run_on_network( "benchmarks/int2float_depth_2018.blif", library, frameNumber, maxLevel, metricType, errorBound );
-    run_on_network( "bench_from_veri/v17.blif", library, frameNumber, maxLevel, metricType, errorBound );
+    // run_on_network( "bench_from_veri/v17.blif", library, frameNumber, maxLevel, metricType, errorBound ); // overlap with c17
     // run_on_network( "bench_from_veri/v432.blif", library, frameNumber, maxLevel, metricType, errorBound );   // too slow
     // run_on_network( "bench_from_veri/v499.blif", library, frameNumber, maxLevel, metricType, errorBound );   // too slow
 
@@ -214,7 +217,8 @@ void run_on_network( const char * file_name, string library, int frameNumber, in
     // threshold[1] = 1;
     // threshold[0] = 1;
 
-    int threshold_int = (int) floor( 0.125 * pow( 2, size ) );
+    int threshold_int = (int) floor( 0.125 * pow( 2, size ) ) + 1;
+    fprintf( stderr, "threshold = %d\n", threshold_int );
     for ( int i = size - 1; i >= 0; --i )
     {
         threshold[i] = threshold_int & 01;

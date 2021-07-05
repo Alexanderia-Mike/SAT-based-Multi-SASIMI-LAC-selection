@@ -1,42 +1,339 @@
 
-===== setting: -m maxed -s area -a areaEncodeApprox
+===== setting: -m maxed -s area -a noEncode -c 2.0 -t 20 -p 1
 
 ===running on the network vtr_benchmarks_blif/2/b1.blif
 * area:
 	the initial area = 17
 * the network property:
 	pi = 3, po = 4, node = 7, level = 3
-the sorting size is 16
-	area after resynthesis = 15.000000
-	reduction = 5.000000
-	the area saved is 10.000000
-time consumed:   0.19 sec
+threshold = 3
+the sorting size is 5
+no LAC can be applied!
+time consumed:   0.20 sec
 
 ===running on the network vtr_benchmarks_blif/3/5xp1.blif
 * area:
 	the initial area = 265
 * the network property:
 	pi = 7, po = 10, node = 92, level = 8
-the sorting size is 189
-	area after resynthesis = 208.000000
-	reduction = 126.000000
-	the area saved is 82.000000
-time consumed: 112.30 sec
+threshold = 129
+the sorting size is 19
+no LAC can be applied!
+time consumed:   2.47 sec
 
 ===running on the network vtr_benchmarks_blif/3/b1.blif
 * area:
 	the initial area = 17
 * the network property:
 	pi = 3, po = 4, node = 6, level = 3
-the sorting size is 23
-	area after resynthesis = 17.000000
-	reduction = 9.000000
-	the area saved is 8.000000
-time consumed:   0.14 sec
+threshold = 3
+the sorting size is 6
+no LAC can be applied!
+time consumed:   0.11 sec
 
 ===running on the network vtr_benchmarks_blif/3/c8.blif
 * area:
 	the initial area = 265
 * the network property:
 	pi = 28, po = 18, node = 103, level = 7
-the sorting size is 342
+threshold = 32769
+the sorting size is 19
+no LAC can be applied!
+time consumed:   2.89 sec
+
+===running on the network vtr_benchmarks_blif/3/C17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+threshold = 1
+the sorting size is 6
+	area after resynthesis = 14.000000
+	reduction = 7.000000
+	the area saved is 7.000000
+verify succeeds
+time consumed:   0.25 sec
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+threshold = 33
+the sorting size is 19
+no LAC can be applied!
+time consumed:   9.61 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+threshold = 17
+the sorting size is 19
+no LAC can be applied!
+time consumed:   5.43 sec
+
+===== setting: -m maxed -s area -a noEncode -c 1.0 -t 20 -p 1
+
+===running on the network vtr_benchmarks_blif/2/b1.blif
+* area:
+	the initial area = 17
+* the network property:
+	pi = 3, po = 4, node = 7, level = 3
+threshold = 3
+the sorting size is 4
+no LAC can be applied!
+time consumed:   0.21 sec
+
+===running on the network vtr_benchmarks_blif/3/5xp1.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 7, po = 10, node = 92, level = 8
+threshold = 129
+the sorting size is 19
+no LAC can be applied!
+time consumed:   1.67 sec
+
+===running on the network vtr_benchmarks_blif/3/b1.blif
+* area:
+	the initial area = 17
+* the network property:
+	pi = 3, po = 4, node = 6, level = 3
+threshold = 3
+the sorting size is 4
+no LAC can be applied!
+time consumed:   0.10 sec
+
+===running on the network vtr_benchmarks_blif/3/c8.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 28, po = 18, node = 103, level = 7
+threshold = 32769
+the sorting size is 19
+no LAC can be applied!
+time consumed:   3.01 sec
+
+===running on the network vtr_benchmarks_blif/3/C17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+threshold = 1
+the sorting size is 4
+	area after resynthesis = 14.000000
+	reduction = 7.000000
+	the area saved is 7.000000
+verify succeeds
+time consumed:   0.13 sec
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+threshold = 33
+the sorting size is 19
+no LAC can be applied!
+time consumed:   9.80 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+threshold = 17
+the sorting size is 19
+no LAC can be applied!
+time consumed:   5.25 sec
+
+===== setting: -m maxed -s area -a noEncode -c 0.5 -t 20 -p 1
+
+===running on the network vtr_benchmarks_blif/2/b1.blif
+* area:
+	the initial area = 17
+* the network property:
+	pi = 3, po = 4, node = 7, level = 3
+threshold = 3
+the sorting size is 3
+no LAC can be applied!
+time consumed:   0.12 sec
+
+===running on the network vtr_benchmarks_blif/3/5xp1.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 7, po = 10, node = 92, level = 8
+threshold = 129
+the sorting size is 19
+no LAC can be applied!
+time consumed:   1.67 sec
+
+===running on the network vtr_benchmarks_blif/3/b1.blif
+* area:
+	the initial area = 17
+* the network property:
+	pi = 3, po = 4, node = 6, level = 3
+threshold = 3
+the sorting size is 3
+no LAC can be applied!
+time consumed:   0.11 sec
+
+===running on the network vtr_benchmarks_blif/3/c8.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 28, po = 18, node = 103, level = 7
+threshold = 32769
+the sorting size is 19
+no LAC can be applied!
+time consumed:  10.76 sec
+
+===running on the network vtr_benchmarks_blif/3/C17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+threshold = 1
+the sorting size is 3
+	area after resynthesis = 14.000000
+	reduction = 7.000000
+	the area saved is 7.000000
+verify succeeds
+time consumed:   0.14 sec
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+threshold = 33
+the sorting size is 19
+no LAC can be applied!
+time consumed:   9.77 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+threshold = 17
+the sorting size is 19
+no LAC can be applied!
+time consumed:   4.95 sec
+
+===== setting: -m maxed -s area -a noEncode -c 2.0 -t 20 -p 0
+
+===running on the network vtr_benchmarks_blif/2/b1.blif
+* area:
+	the initial area = 17
+* the network property:
+	pi = 3, po = 4, node = 7, level = 3
+threshold = 3
+the sorting size is 5
+no LAC can be applied!
+time consumed:   0.13 sec
+
+===running on the network vtr_benchmarks_blif/3/5xp1.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 7, po = 10, node = 92, level = 8
+threshold = 129
+the sorting size is 19
+no LAC can be applied!
+time consumed:   1.73 sec
+
+===running on the network vtr_benchmarks_blif/3/b1.blif
+* area:
+	the initial area = 17
+* the network property:
+	pi = 3, po = 4, node = 6, level = 3
+threshold = 3
+the sorting size is 6
+no LAC can be applied!
+time consumed:   0.13 sec
+
+===running on the network vtr_benchmarks_blif/3/c8.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 28, po = 18, node = 103, level = 7
+threshold = 32769
+the sorting size is 19
+no LAC can be applied!
+time consumed:   4.94 sec
+
+===running on the network vtr_benchmarks_blif/3/C17.blif
+* area:
+	the initial area = 14
+* the network property:
+	pi = 5, po = 2, node = 6, level = 3
+threshold = 1
+the sorting size is 6
+	area after resynthesis = 14.000000
+	reduction = 7.000000
+	the area saved is 7.000000
+verify succeeds
+time consumed:   0.12 sec
+
+===running on the network benchmarks/priority_depth_2018.blif
+* area:
+	the initial area = 1143
+* the network property:
+	pi = 128, po = 8, node = 453, level = 17
+threshold = 33
+the sorting size is 19
+no LAC can be applied!
+time consumed:   9.55 sec
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+threshold = 17
+the sorting size is 19
+no LAC can be applied!
+time consumed:   5.27 sec
+
+===== setting: -m maxed -s area -a noEncode -c 1.0 -t 20 -p 0
+
+===running on the network vtr_benchmarks_blif/2/b1.blif
+* area:
+	the initial area = 17
+* the network property:
+	pi = 3, po = 4, node = 7, level = 3
+threshold = 3
+the sorting size is 4
+no LAC can be applied!
+time consumed:   0.17 sec
+
+===running on the network vtr_benchmarks_blif/3/5xp1.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 7, po = 10, node = 92, level = 8
+threshold = 129
+the sorting size is 19
+no LAC can be applied!
+time consumed:   2.24 sec
+
+===running on the network vtr_benchmarks_blif/3/b1.blif
+* area:
+	the initial area = 17
+* the network property:
+	pi = 3, po = 4, node = 6, level = 3
+threshold = 3
+the sorting size is 3
+no LAC can be applied!
+time consumed:   0.24 sec
+
+===running on the network vtr_benchmarks_blif/3/c8.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 28, po = 18, node = 103, level = 7
+threshold = 32769

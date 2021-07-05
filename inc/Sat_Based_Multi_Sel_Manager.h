@@ -9,19 +9,21 @@
 #include <sstream>
 
 extern int truncateSize;
+extern int lacApplyMode;
 
 class SBMSM_t
 {
   private:
     // file names
-    char cnfFileName[100];
-    char SATResultFileName[100];
-    char aigFileName[100];
-    char naiveMiterName[100];
-    char verifyMiterName[100];
-    char aigFileNameDup[100];
-    char cnfFileNameDup[100];
-    char cnfFileNameVerifyMiter[100];
+    char cnfFileName[200];
+    char SATResultFileName[200];
+    char SATProblemFileName[200];
+    char aigFileName[200];
+    char naiveMiterName[200];
+    char verifyMiterName[200];
+    char aigFileNameDup[200];
+    char cnfFileNameDup[200];
+    char cnfFileNameVerifyMiter[200];
     // networks
     Abc_Ntk_t * pOriNtk;
     Abc_Ntk_t * pAppNtk;
@@ -72,8 +74,12 @@ class SBMSM_t
     void miter_add_sorting_network_area_encoded ( std::vector<Abc_Obj_t *> &sortedSelectionSignals, const bool restrict_range, const int maximum_range );
     void range_map ( std::vector<int> & range_mapped_list, const std::vector<int> & original_list, const int maximum_range );
     double calculate_total_reduced_area ();
+    double calculate_total_reduced_area_s_a_a_d ();
     void apply_lac ( LAC_t & lac );
+    void apply_lac_s_a_a_d ( LAC_t & lac );
+    void batch_deletion_s_a_a_d ();
     void alexanderia_replace_obj( Abc_Obj_t * pNodeOld, Abc_Obj_t * pNodeNew );
+    void alexanderia_replace_obj_s_a_a_d( Abc_Obj_t * pNodeOld, Abc_Obj_t * pNodeNew );
     void alexanderia_delete_obj_rec( Abc_Obj_t * pObj );
     void assign_PIIDs( Cnf_Dat_t * miterCnfData, bool print );
     void miter_add_sorting_network ( std::vector<Abc_Obj_t *> &sortedSelectionSignals );

@@ -152,10 +152,9 @@ static void QDPLL_ddd_quantifiers_for_verify_miter( QDPLL * depqbf, int * OriPII
 }
 
 // solve the sat problem stored in <depqbf> and if SAT or UNSAT, return the assignment of variables in the file named <pFileName>
-QDPLLResult QDPLL_SolveSatWriteAssignments( QDPLL * depqbf, char * pFileName )
+QDPLLResult QDPLL_SolveSatWriteAssignments( QDPLL * depqbf, char * pFileNameOut, char * pFileNameIn )
 {
     FILE * pOut;
-    char * cnfProblemFileName = "intermediate-results/SAT_Problem_In.qdimacs";
 
     // solve the SAT problem
     QDPLLResult res = qdpll_sat (depqbf);
@@ -168,11 +167,11 @@ QDPLLResult QDPLL_SolveSatWriteAssignments( QDPLL * depqbf, char * pFileName )
         else
             std::cout << "---------- UNSAT!" << std::endl << "The UNSAT core is:" << std::endl;
         // qdpll_print_qdimacs_output ( depqbf );
-        qdpll_print_qdimacs_output_to_file ( depqbf, pFileName );
+        qdpll_print_qdimacs_output_to_file ( depqbf, pFileNameOut );
         // qdpll_print_qdimacs_output ( depqbf );
     }
     qdpll_reset( depqbf );
-    pOut = fopen( cnfProblemFileName, "w+" );
+    pOut = fopen( pFileNameIn, "w+" );
     qdpll_print ( depqbf, pOut );
     fclose( pOut );
     return res;

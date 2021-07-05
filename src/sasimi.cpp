@@ -1588,7 +1588,7 @@ void SASIMI_Manager_t::Alexanderia_CollectNodeLACUnderMaxED(IN Abc_Obj_t * pTS, 
     Abc_Ntk_t * pAppNtk = appSmlt.GetNetwork();
     DASSERT(pAppNtk == pTS->pNtk);
     int64_t errorBoundInt = (int64_t) threshold * errorScale;
-    std::cout << "errorboundint = " << errorBoundInt << std::endl;
+    // std::cout << "errorboundint = " << errorBoundInt << std::endl;
     double invDelay = Mio_LibraryReadDelayInvMax((Mio_Library_t *)Abc_FrameReadLibGen()) + 0.1;
     int areaInv = Mio_LibraryReadAreaInv((Mio_Library_t *)Abc_FrameReadLibGen());
     int areaBuf = Mio_LibraryReadAreaBuf((Mio_Library_t *)Abc_FrameReadLibGen());
@@ -1596,7 +1596,7 @@ void SASIMI_Manager_t::Alexanderia_CollectNodeLACUnderMaxED(IN Abc_Obj_t * pTS, 
     nodeLACDup.SetFOM(0.0);
 
     vector <int64_t> appOutputsNew(nFrame);
-    std::cout << "nframe = " << nFrame << std::endl;
+    // std::cout << "nframe = " << nFrame << std::endl;
     for (int k = 0; k < nFrame; ++k)
     {
         appOutputsNew[k] = appOutputs[k] ^ bdNode[k];   // 第 k 次模拟，改变 pTS 之后新的 ouptut
