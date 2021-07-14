@@ -13,11 +13,15 @@
             "program": "${workspaceFolder}/sasimi-vecbee.out",
             "args": [
                 "-m",
-                "er",
+                "maxed",
                 "-s",
                 "area",
                 "-a",
-                "areaEncodeApprox"
+                "areaEncodeApprox",
+                "-c",
+                "2.0",
+                "-p",
+                "1"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

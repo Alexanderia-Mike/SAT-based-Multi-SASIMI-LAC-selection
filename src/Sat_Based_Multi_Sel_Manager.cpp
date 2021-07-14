@@ -66,6 +66,14 @@ SBMSM_t::SBMSM_t( IN Abc_Ntk_t * _pOriNtk, int _threshold[], SASIMI_Manager_t & 
     // assign the threshold
     for ( int i = 0; i < size; ++i )
         threshold[i] = _threshold[i];
+    
+    fprintf( stderr, "threshold = " );
+    for ( int i = size - 1; i >= 0; --i )
+    {
+        std::cout << threshold[i];
+        fprintf( stderr, "%d", threshold[i] );
+    }
+    fprintf( stderr, "\n" );
     // std::cout << "hey here" << std::endl;
     // std::cout << "threshold array = ";
     // for ( int i = 0; i < size; ++i )
@@ -73,8 +81,8 @@ SBMSM_t::SBMSM_t( IN Abc_Ntk_t * _pOriNtk, int _threshold[], SASIMI_Manager_t & 
     //     std::cout << threshold[i];
     // }
     // std::cout << std::endl;
-    std::vector<int> temp_vec( threshold, threshold + size );
-    threshold_value = vec_to_int( temp_vec );
+    // std::vector<int> temp_vec( threshold, threshold + size );
+    // threshold_value = vec_to_int( temp_vec );
     // std::cout << "threshold value = " << threshold_value << std::endl;
 }
 
@@ -369,9 +377,12 @@ SBMSM_t::create_naive_miter()
 void
 SBMSM_t::create_sorted_miter( std::vector<Abc_Obj_t *> & sortedSelectionSignals, int selectionIndex )
 {
-    Abc_Obj_t * pNewOutput, * pOriOutput, * pOriOutputFanin;
+    Abc_Obj_t * pNewOutput, * pOriOutput, * pOriOutputFanin, * pOriOutputFaninReg;
     pOriOutput = Abc_NtkPo( pMiter, 0 );    // old output
-    pOriOutputFanin = Abc_ObjFanin0( pOriOutput );  // get the fanin of the old output
+    pOriOutputFaninReg = Abc_ObjFanin0( pOriOutput );  // get the fanin of the old output
+    pOriOutputFanin =   pOriOutput->fCompl0 ?
+                        Abc_ObjNot( pOriOutputFaninReg ) :
+                        pOriOutputFaninReg;
     pNewOutput = Abc_NtkCreatePo( pMiter ); // create the new output
     // add the AND(fanin, selection-signal) to the new output
     Abc_ObjAddFanin( pNewOutput, Abc_AigAnd( ( Abc_Aig_t * ) pMiter->pManFunc, pOriOutputFanin, sortedSelectionSignals[selectionIndex] ) );
@@ -382,9 +393,25 @@ SBMSM_t::create_sorted_miter( std::vector<Abc_Obj_t *> & sortedSelectionSignals,
 void
 SBMSM_t::create_sorted_miter_dup( std::vector<Abc_Obj_t *> & sortedSelectionSignalsDup, int pointer, Abc_Ntk_t * pMiterDup )
 {
-    Abc_Obj_t * pNewOutput, * pOriOutput, * pOriOutputFanin;
+    Abc_Obj_t * pNewOutput, * pOriOutput, * pOriOutputFanin, * pOriOutputFaninReg;
     pOriOutput = Abc_NtkPo( pMiterDup, 0 );
-    pOriOutputFanin = Abc_ObjFanin0( pOriOutput );
+    pOriOutputFaninReg = Abc_ObjFanin0( pOriOutput );
+    pOriOutputFanin =   pOriOutput->fCompl0 ? 
+                        Abc_ObjNot( pOriOutputFaninReg ) :
+                        pOriOutputFaninReg ;
+    // /* debug begin */
+    // if ( Abc_AigNodeIsConst( pOriOutputFanin ) )
+    // {
+    //     if ( Abc_ObjIsComplement( pOriOutputFanin ) )
+    //         fprintf( stderr, "is const 0, as expected\n" );
+    //     else
+    //         fprintf( stderr, "is const 1, wrong\n" );
+    // }
+    // else
+    // {
+    //     fprintf( stderr, "is not const, wrong\n" );
+    // }
+    // /* debug end */
     pNewOutput = Abc_NtkCreatePo( pMiterDup );
     // add fanin to the new output
     Abc_ObjAddFanin( pNewOutput, Abc_AigAnd( ( Abc_Aig_t * ) pMiterDup->pManFunc, pOriOutputFanin, sortedSelectionSignalsDup[pointer] ) );
@@ -570,7 +597,7 @@ SBMSM_t::create_subtractor_comparator_miter () {
     // builds the comparator
     int size = Abc_NtkPoNum( pAppNtk );
     Abc_Obj_t ** thresholdNodes = const_nodes( pMiter, threshold, size );
-    Abc_Obj_t * compareRes = X_less_than_Y( pMiter, Diff, thresholdNodes,  size );
+    Abc_Obj_t * compareRes = X_less_than_Y( pMiter, Diff, thresholdNodes, size );
     // create the final output
     Abc_Obj_t * result = Abc_NtkCreatePo( pMiter );
     Abc_ObjAddFanin( result, compareRes );
@@ -590,6 +617,7 @@ SBMSM_t::create_subtractor_comparator_miter () {
     miter_check();
 }
 
+// if X = "101000", then it should be reversed -- namely the actual value is "000101"
 Abc_Obj_t ** 
 SBMSM_t::X_subtract_Y_absolute(Abc_Ntk_t * pNtk, Abc_Obj_t * X[], Abc_Obj_t * Y[], int n) {
     if(n <= 0) return nullptr;
@@ -631,6 +659,7 @@ SBMSM_t::X_subtract_Y_absolute(Abc_Ntk_t * pNtk, Abc_Obj_t * X[], Abc_Obj_t * Y[
     return res;
 }
 
+// if X = "101000", then the actual value is reversed, namely the real value is "000101"
 Abc_Obj_t * 
 SBMSM_t::X_less_than_Y(Abc_Ntk_t * pNtk, Abc_Obj_t * X[], Abc_Obj_t * Y[], int n) {
     /* implementation */
@@ -652,7 +681,8 @@ SBMSM_t::X_less_than_Y(Abc_Ntk_t * pNtk, Abc_Obj_t * X[], Abc_Obj_t * Y[], int n
 
 Abc_Obj_t * 
 SBMSM_t::const_node ( Abc_Ntk_t * pNtk, int n ) {
-    return n ? Abc_AigConst1( pNtk ) : Abc_ObjNot( const_node( pNtk, 1 ) );
+    // return n ? Abc_AigConst1( pNtk ) : Abc_ObjNot( const_node( pNtk, 1 ) );
+    return n ? Abc_AigConst1( pNtk ) : Abc_ObjNot( Abc_AigConst1( pNtk ) );
 }
 
 Abc_Obj_t ** 
@@ -1127,8 +1157,8 @@ SBMSM_t::sorted_selection_find_least ( std::vector<Abc_Obj_t *> &sortedSelection
     Aig_Man_t * miterAigMan;
     // int OriPIIDs[OriPINum+1], MUXPIIDs[MUXPINum+1];
     selectionNum = sortedSelectionSignals.size();   left = 0;   right = selectionNum - 1;
-    fprintf( stderr, "the sorting size is %d\n", right );
-    for ( int i =0; i < sortedSelectionSignals.size(); ++i )
+    fprintf( stderr, "the sorting size is %d\n", right + 1 );
+    for ( int i = 0; i < sortedSelectionSignals.size(); ++i )
         assert( Abc_ObjRegular( sortedSelectionSignals[i] )->pNtk == pMiter );
 
     std::cout << "----------- initial condition: left = " << left << "; right = " << right << std::endl;
@@ -1180,13 +1210,24 @@ SBMSM_t::sorted_selection_find_least ( std::vector<Abc_Obj_t *> &sortedSelection
             std::cout << "-------------- SAT! updating right pointer" << std::endl;
             right = pointer - 1;
         }
-        else
+        else if ( res == QDPLL_RESULT_UNSAT )
         {
             std::cout << "-------------- UNSAT! updating left pointer" << std::endl;
+            qdpll_print_qdimacs_output( depqbf );
             left = pointer + 1;
         }
+        else if ( res == QDPLL_RESULT_UNKNOWN )
+        {
+            std::cout << "-------------- UNKNOWN! cannot solve" << std::endl;
+            exit( 0 );
+        }
+        else
+        {
+            assert( 0 );
+        }
         qdpll_reset( depqbf );
-        FILE * pOut = fopen( "intermediate-results/SAT_Problem_In.qdimacs", "w+" );
+        FILE * pOut = fopen( "intermediate-results/SAT_Problem_Find_Least_In.qdimacs", "w+" );
+        qdpll_print ( depqbf, pOut );
         fclose( pOut );
 
         qdpll_delete ( depqbf );

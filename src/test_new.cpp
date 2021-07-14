@@ -11,6 +11,7 @@ AreaEncodeMode_t areaEncodeMode;
 float errorScale;
 int truncateSize;
 int lacApplyMode;
+float normalized_error_threshold;
 
 
 using namespace std;
@@ -40,6 +41,7 @@ parser Cmdline_Parser(int argc, char * argv[])
     option.add <float>    ("errorBoundScale", 'c', "scale the errorbound, a float number", false, 1.0);
     option.add <int>    ("LACTruncateSize", 't', "the number of LACs that would be truncated", false, 20);
     option.add <int>    ("lacApplyMode", 'p', "0 for apply and skip, and 1 for substitute and delete", false, 0);
+    option.add <float>    ("normalizedErrorThreshold", 'd', "the normalized maxed error threshold, a float between 0 and 1", false, 0.125);
     option.parse_check(argc, argv);
     return option;
 }
@@ -93,6 +95,7 @@ int main(int argc, char * argv[])
     errorScale = option.get <float> ("errorBoundScale");
     truncateSize = option.get <int> ("LACTruncateSize");
     lacApplyMode = option.get <int> ("lacApplyMode");
+    normalized_error_threshold = option.get <float> ("normalizedErrorThreshold");
     float errorBound = option.get <float> ("errorBound");
     int frameNumber = option.get <int> ("frameNumber");
     int maxLevel = option.get <int> ("maxLevel");
@@ -102,17 +105,18 @@ int main(int argc, char * argv[])
 
     // run_on_network( "vtr_benchmarks_blif/adder.blif", library, frameNumber, maxLevel, metricType, errorBound ); // too many pos
     // run_on_network( "vtr_benchmarks_blif/multiclock.blif", library, frameNumber, maxLevel, metricType, errorBound );
+    run_on_network( "benchmarks/priority_depth_2018.blif", library, frameNumber, maxLevel, metricType, errorBound ); // from here, too slow when first 40 LACs are chosen
+    run_on_network( "benchmarks/int2float_depth_2018.blif", library, frameNumber, maxLevel, metricType, errorBound );
+    run_on_network( "vtr_benchmarks_blif/3/C17.blif", library, frameNumber, maxLevel, metricType, errorBound );
     run_on_network( "vtr_benchmarks_blif/2/b1.blif", library, frameNumber, maxLevel, metricType, errorBound ); // ok
+    run_on_network( "vtr_benchmarks_blif/3/5xp1.blif", library, frameNumber, maxLevel, metricType, errorBound ); // 
+    run_on_network( "vtr_benchmarks_blif/3/b1.blif", library, frameNumber, maxLevel, metricType, errorBound );
+    run_on_network( "vtr_benchmarks_blif/3/c8.blif", library, frameNumber, maxLevel, metricType, errorBound ); // end here, too slow when first 40 LACs are chosen
     // run_on_network( "vtr_benchmarks_blif/2/b9.blif", library, frameNumber, maxLevel, metricType, errorBound );
     // run_on_network( "vtr_benchmarks_blif/2/bbara.blif", library, frameNumber, maxLevel, metricType, errorBound );
     // run_on_network( "vtr_benchmarks_blif/2/bbtas.blif", library, frameNumber, maxLevel, metricType, errorBound );
-    run_on_network( "vtr_benchmarks_blif/3/5xp1.blif", library, frameNumber, maxLevel, metricType, errorBound ); // from here
-    run_on_network( "vtr_benchmarks_blif/3/b1.blif", library, frameNumber, maxLevel, metricType, errorBound );
-    run_on_network( "vtr_benchmarks_blif/3/c8.blif", library, frameNumber, maxLevel, metricType, errorBound ); // too slow when first 40 LACs are chosen
-    run_on_network( "vtr_benchmarks_blif/3/C17.blif", library, frameNumber, maxLevel, metricType, errorBound );
     // run_on_network( "vtr_benchmarks_blif/3/C432.blif", library, frameNumber, maxLevel, metricType, errorBound ); // too slow
-    run_on_network( "benchmarks/priority_depth_2018.blif", library, frameNumber, maxLevel, metricType, errorBound ); // too slow when first 40 LACs are chosen
-    run_on_network( "benchmarks/int2float_depth_2018.blif", library, frameNumber, maxLevel, metricType, errorBound );
+    // run_on_network( "in/Alexanderia_test_bench_3.blif", library, frameNumber, maxLevel, metricType, errorBound );       // a naive test bench
     // run_on_network( "bench_from_veri/v17.blif", library, frameNumber, maxLevel, metricType, errorBound ); // overlap with c17
     // run_on_network( "bench_from_veri/v432.blif", library, frameNumber, maxLevel, metricType, errorBound );   // too slow
     // run_on_network( "bench_from_veri/v499.blif", library, frameNumber, maxLevel, metricType, errorBound );   // too slow
@@ -217,20 +221,23 @@ void run_on_network( const char * file_name, string library, int frameNumber, in
     // threshold[1] = 1;
     // threshold[0] = 1;
 
-    int threshold_int = (int) floor( 0.125 * pow( 2, size ) ) + 1;
-    fprintf( stderr, "threshold = %d\n", threshold_int );
-    for ( int i = size - 1; i >= 0; --i )
+    int threshold_int = (int) floor( normalized_error_threshold * pow( 2, size ) ) + 1;
+    // int threshold_int = 0;
+    fprintf( stderr, "threshold_int = %d\n", threshold_int );
+    for ( int i = 0; i < size; ++i )
     {
         threshold[i] = threshold_int & 01;
         threshold_int >>= 1;
     }
 
     std::cout << "threshold size = " << size << std::endl;
-    for ( int i = 0; i < size; ++i )
-    {
-        std::cout << threshold[i];
-    }
+    // for ( int i = size - 1; i >= 0; --i )
+    // {
+    //     std::cout << threshold[i];
+    //     fprintf( stderr, "%d", threshold[i] );
+    // }
     std::cout << std::endl;
+    // fprintf( stderr, "\n" );
     
     Abc_Ntk_t * pNtkStrash = Abc_NtkStrash( pNtkLogic, 0, 0, 0 );
     Abc_Ntk_t * pNtkMappedLogic = Abc_NtkMap( pNtkStrash, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 );

@@ -1,0 +1,83 @@
+
+===== setting: -m maxed -s area -a noEncode -c 2.0 -t 20 -p 1 -d 0.5
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+threshold_int = 7
+threshold = 0000111
+the sorting size is 20
+	area after resynthesis = 409.000000
+	reduction = 187.000000
+	the area saved is 222.000000
+verify succeeds
+time consumed:   7.95 sec
+
+===running on the network vtr_benchmarks_blif/3/5xp1.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 7, po = 10, node = 92, level = 8
+threshold_int = 52
+threshold = 0000110100
+the sorting size is 20
+	area after resynthesis = 208.000000
+	reduction = 122.000000
+	the area saved is 86.000000
+verify succeeds
+time consumed:   6.41 sec
+
+===running on the network vtr_benchmarks_blif/3/c8.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 28, po = 18, node = 103, level = 7
+threshold_int = 13108
+threshold = 000011001100110100
+the sorting size is 20
+	area after resynthesis = 245.000000
+	reduction = 150.000000
+	the area saved is 95.000000
+verify succeeds
+time consumed: 127.44 sec
+
+===== setting: -m maxed -s area -a noEncode -c 2.0 -t 40 -p 1 -d 0.5
+
+===running on the network benchmarks/int2float_depth_2018.blif
+* area:
+	the initial area = 429
+* the network property:
+	pi = 11, po = 7, node = 183, level = 10
+threshold_int = 7
+threshold = 0000111
+the sorting size is 40
+	area after resynthesis = 409.000000
+	reduction = 171.000000
+	the area saved is 238.000000
+verify succeeds
+time consumed:  12.70 sec
+
+===running on the network vtr_benchmarks_blif/3/5xp1.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 7, po = 10, node = 92, level = 8
+threshold_int = 52
+threshold = 0000110100
+the sorting size is 40
+	area after resynthesis = 208.000000
+	reduction = 117.000000
+	the area saved is 91.000000
+verify succeeds
+time consumed:   4.43 sec
+
+===running on the network vtr_benchmarks_blif/3/c8.blif
+* area:
+	the initial area = 265
+* the network property:
+	pi = 28, po = 18, node = 103, level = 7
+threshold_int = 13108
+threshold = 000011001100110100
+the sorting size is 40
